@@ -1,0 +1,152 @@
+# 把 DataFoundry 部署到 Render 免费档(Docker web service,公开仓库直连构建)。
+# HF Docker Space 已转 PRO 付费(2026),Render free 是当前无卡免费方案:
+#   750 实例小时/月;闲置 15 分钟休眠,冷启动 30-60 秒(测试够用)。
+#
+# 需要的仓库 secrets:
+#   RENDER_API_KEY     render.com -> Account Settings -> API Keys
+#   DF_ADMIN_PASSWORD  初始管理员口令(已配置过则复用)
+
+name: deploy-render
+
+on:
+  workflow_dispatch:
+    inputs:
+      service_name:
+        description: "服务名"
+        default: "datafoundry"
+        required: true
+      admin_user:
+        description: "初始管理员用户名"
+        default: "william"
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Create or update Render service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          DF_ADMIN_PASSWORD: ${{ secrets.DF_ADMIN_PASSWORD }}
+          SERVICE_NAME: ${{ inputs.service_name }}
+          ADMIN_USER: ${{ inputs.admin_user }}
+          REPO_URL: ${{ github.server_url }}/${{ github.repository }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          python - <<'EOF'
+          import json, os, sys, time, urllib.request
+
+          KEY = os.environ.get("RENDER_API_KEY", "")
+          PW = os.environ.get("DF_ADMIN_PASSWORD", "")
+          if not KEY:
+              sys.exit("缺少 secret RENDER_API_KEY")
+          if len(PW) < 8:
+              sys.exit("缺少 secret DF_ADMIN_PASSWORD(>=8 位)")
+          NAME, ADMIN = os.environ["SERVICE_NAME"], os.environ["ADMIN_USER"]
+          BASE = "https://api.render.com/v1"
+
+          def call(method, path, body=None, ok=(200, 201)):
+              req = urllib.request.Request(
+                  BASE + path,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  method=method,
+                  headers={"Authorization": f"Bearer {KEY}", "Content-Type": "application/json",
+                           "Accept": "application/json"},
+              )
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      return r.status, json.loads(r.read() or b"null")
+              except urllib.error.HTTPError as e:
+                  detail = e.read().decode(errors="replace")
+                  print(f"[api] {method} {path} -> {e.code}: {detail[:600]}")
+                  return e.code, None
+
+          # 1) owner
+          st, owners = call("GET", "/owners?limit=10")
+          if st != 200 or not owners:
+              sys.exit(f"取 owner 失败(HTTP {st}):检查 RENDER_API_KEY")
+          owner_id = owners[0]["owner"]["id"]
+          print("owner:", owner_id)
+
+          env_vars = [{"key": "DATAFOUNDRY_BOOTSTRAP_ADMIN", "value": f"{ADMIN}:{PW}"}]
+
+          # 2) 已存在则复用:更新环境变量并触发部署
+          st, existing = call("GET", f"/services?name={NAME}&limit=5")
+          svc = None
+          if st == 200 and existing:
+              for item in existing:
+                  s = item.get("service", item)
+                  if s.get("name") == NAME:
+                      svc = s
+                      break
+          if svc:
+              sid = svc["id"]
+              print("已存在服务:", sid, "-> 更新环境变量并重新部署")
+              call("PUT", f"/services/{sid}/env-vars", body=env_vars)
+              call("POST", f"/services/{sid}/deploys", body={})
+          else:
+              # 3) 创建(字段名兼容:先 runtime,再退 env)
+              for runtime_key in ("runtime", "env"):
+                  body = {
+                      "type": "web_service",
+                      "name": NAME,
+                      "ownerId": owner_id,
+                      "repo": os.environ["REPO_URL"],
+                      "branch": os.environ["BRANCH"],
+                      "autoDeploy": "yes",
+                      "envVars": env_vars,
+                      "serviceDetails": {
+                          runtime_key: "docker",
+                          "plan": "free",
+                          "region": "oregon",
+                          "healthCheckPath": "/health",
+                          "envSpecificDetails": {"dockerfilePath": "./Dockerfile", "dockerContext": "."},
+                      },
+                  }
+                  st, created = call("POST", "/services", body=body)
+                  if st in (200, 201) and created:
+                      svc = created.get("service", created)
+                      print("创建成功:", svc.get("id"))
+                      break
+                  print(f"创建失败(runtime 字段={runtime_key}),重试另一种写法...")
+              if not svc:
+                  sys.exit("服务创建失败:见上方 API 响应")
+
+          sid = svc["id"]
+
+          # 4) 等部署 live(免费档构建较慢,最多等 20 分钟)
+          url = ""
+          deadline = time.time() + 1200
+          status = "unknown"
+          while time.time() < deadline:
+              st, info = call("GET", f"/services/{sid}")
+              if st == 200 and info:
+                  s = info.get("service", info)
+                  url = (s.get("serviceDetails") or {}).get("url") or url
+              st, deploys = call("GET", f"/services/{sid}/deploys?limit=1")
+              if st == 200 and deploys:
+                  d = deploys[0].get("deploy", deploys[0])
+                  status = d.get("status", "unknown")
+                  print(f"deploy status: {status}")
+                  if status == "live":
+                      break
+                  if status in ("build_failed", "update_failed", "deactivated", "canceled"):
+                      sys.exit(f"部署失败: {status}(Render 控制台看构建日志)")
+              time.sleep(20)
+
+          print("\n== 部署结果 ==")
+          print("服务 ID:  ", sid)
+          print("状态:     ", status)
+          print("服务地址: ", url or "(见 Render 控制台)")
+          print("登录页:   ", (url + "/device") if url else "-")
+          print("管理员:   ", ADMIN, "(口令 = DF_ADMIN_PASSWORD)")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+              fh.write(f"### DataFoundry @ Render\n\n- 服务: {url}\n- 登录页: {url}/device\n"
+                       f"- 管理员: `{ADMIN}`\n- 状态: {status}\n")
+          if status != "live":
+              sys.exit("超时未 live:多半还在构建,稍后直接访问上面的 URL 或看 Render 控制台")
+          EOF
