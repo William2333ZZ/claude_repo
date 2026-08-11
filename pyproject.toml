@@ -1,0 +1,27 @@
+[project]
+name = "datafoundry"
+version = "0.1.0"
+description = "自研数据精炼平台:算子引擎 + 漏斗编译器 + 逐样本血缘 + RBAC 认证服务 + Claude Code MCP harness"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi>=0.110",
+    "uvicorn>=0.27",
+    "PyJWT>=2.7",
+    "argon2-cffi>=23.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[project.scripts]
+datafoundry = "datafoundry.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["datafoundry*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
