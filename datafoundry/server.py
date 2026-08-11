@@ -80,6 +80,19 @@ def create_app(store: Store | None = None) -> FastAPI:
     app = FastAPI(title="DataFoundry", version=__version__)
     app.state.store = store
 
+    # 容器部署引导:库为空且设置了 DATAFOUNDRY_BOOTSTRAP_ADMIN="用户名:口令" 时自动建 admin,
+    # 避免公网实例的 /auth/bootstrap 被抢注。口令经 Space/容器 secret 注入,不落仓库。
+    import os as _os
+
+    _boot = _os.environ.get("DATAFOUNDRY_BOOTSTRAP_ADMIN", "")
+    if _boot and ":" in _boot and store.count_users() == 0:
+        _user, _pw = _boot.split(":", 1)
+        try:
+            store.create_user(_user, _pw, "admin")
+            store.audit(_user, "bootstrap_admin", "via env DATAFOUNDRY_BOOTSTRAP_ADMIN")
+        except ValueError as _exc:  # 用户名/口令不合规:启动继续,日志可见
+            print(f"[datafoundry] 引导管理员失败: {_exc}")
+
     # ---------- 认证 ----------
 
     def current_user(

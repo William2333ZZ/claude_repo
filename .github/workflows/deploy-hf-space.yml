@@ -1,0 +1,93 @@
+# 把 DataFoundry 部署成 Hugging Face Space(Docker,公网可访问)。
+# 跳板原因:开发容器出网受限,而 GitHub Actions 运行器有完整外网。
+#
+# 使用前在仓库 Settings -> Secrets and variables -> Actions 配置两个 secret:
+#   HF_TOKEN           Hugging Face write 权限 token(hf.co -> Settings -> Access Tokens)
+#   DF_ADMIN_PASSWORD  平台初始管理员口令(>=8 位,自定;登录页要用)
+# 然后 Actions 页手动 Run workflow(或让会话里的 Claude 触发)。
+
+name: deploy-hf-space
+
+on:
+  workflow_dispatch:
+    inputs:
+      space_name:
+        description: "Space 名称"
+        default: "datafoundry"
+        required: true
+      admin_user:
+        description: "初始管理员用户名"
+        default: "william"
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install "huggingface_hub>=0.24"
+
+      - name: Deploy to Space
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DF_ADMIN_PASSWORD: ${{ secrets.DF_ADMIN_PASSWORD }}
+          SPACE_NAME: ${{ inputs.space_name }}
+          ADMIN_USER: ${{ inputs.admin_user }}
+        run: |
+          python - <<'EOF'
+          import os, pathlib, shutil, sys
+          from huggingface_hub import HfApi
+
+          token = os.environ.get("HF_TOKEN", "")
+          password = os.environ.get("DF_ADMIN_PASSWORD", "")
+          if not token:
+              sys.exit("缺少 secret HF_TOKEN:仓库 Settings -> Secrets -> Actions 添加")
+          if len(password) < 8:
+              sys.exit("缺少 secret DF_ADMIN_PASSWORD(>=8 位)")
+
+          api = HfApi(token=token)
+          username = api.whoami()["name"]
+          space = os.environ["SPACE_NAME"]
+          admin = os.environ["ADMIN_USER"]
+          repo_id = f"{username}/{space}"
+
+          # 组装 Space 内容:HF front-matter README + 服务代码 + Dockerfile
+          stage = pathlib.Path("hf-stage"); stage.mkdir()
+          stage.joinpath("README.md").write_text(
+              "---\n"
+              "title: DataFoundry\n"
+              "emoji: \U0001F3ED\n"
+              "colorFrom: gray\n"
+              "colorTo: purple\n"
+              "sdk: docker\n"
+              "app_port: 8321\n"
+              "pinned: false\n"
+              "---\n\n"
+              "DataFoundry 数据精炼平台测试实例。登录入口: /device\n",
+              encoding="utf-8")
+          shutil.copy("Dockerfile", stage / "Dockerfile")
+          shutil.copy("pyproject.toml", stage / "pyproject.toml")
+          shutil.copytree("datafoundry", stage / "datafoundry",
+                          ignore=shutil.ignore_patterns("__pycache__"))
+
+          api.create_repo(repo_id, repo_type="space", space_sdk="docker", exist_ok=True)
+          api.add_space_secret(repo_id, "DATAFOUNDRY_BOOTSTRAP_ADMIN", f"{admin}:{password}")
+          api.upload_folder(repo_id=repo_id, repo_type="space", folder_path=str(stage),
+                            commit_message="deploy datafoundry")
+
+          sub = repo_id.replace("/", "-").replace("_", "-").replace(".", "-").lower()
+          url = f"https://{sub}.hf.space"
+          print(f"\n== 部署完成(Space 构建约需 2-5 分钟) ==")
+          print(f"Space 控制台: https://huggingface.co/spaces/{repo_id}")
+          print(f"服务地址:     {url}")
+          print(f"登录页:       {url}/device")
+          print(f"管理员:       {admin}(口令 = DF_ADMIN_PASSWORD)")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as fh:
+              fh.write(f"### DataFoundry 已部署\n\n- 服务: {url}\n- 登录页: {url}/device\n"
+                       f"- 控制台: https://huggingface.co/spaces/{repo_id}\n- 管理员: `{admin}`\n")
+          EOF

@@ -124,3 +124,18 @@ def test_run_validation_errors(client):
 def test_health_engine_status(client):
     r = client.get("/health").json()
     assert r["ok"] and r["engines"]["native"]["available"]
+
+
+def test_env_bootstrap_admin(tmp_path, monkeypatch):
+    from datafoundry.server import create_app
+    from datafoundry.store import Store
+
+    monkeypatch.setenv("DATAFOUNDRY_BOOTSTRAP_ADMIN", "opsadmin:opspass123")
+    c = TestClient(create_app(Store(tmp_path / "boot-home")))
+    login = c.post("/auth/login", json={"username": "opsadmin", "password": "opspass123"})
+    assert login.status_code == 200 and login.json()["role"] == "admin"
+    # 已有用户后,公网 bootstrap 端点应已关闭
+    assert c.post("/auth/bootstrap", json={"username": "evil", "password": "evilpass123"}).status_code == 403
+    # 二次启动(库已有用户)不重复创建、不报错
+    c2 = TestClient(create_app(Store(tmp_path / "boot-home")))
+    assert c2.post("/auth/login", json={"username": "opsadmin", "password": "opspass123"}).status_code == 200
