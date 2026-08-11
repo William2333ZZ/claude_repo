@@ -67,7 +67,21 @@ CREATE TABLE IF NOT EXISTS audit (
     action TEXT NOT NULL,
     detail TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS device_codes (
+    id INTEGER PRIMARY KEY,
+    device_hash TEXT UNIQUE NOT NULL,
+    user_code TEXT UNIQUE NOT NULL,
+    label TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'pending',
+    user_id INTEGER,
+    poll_interval REAL NOT NULL,
+    last_poll REAL,
+    created_at REAL NOT NULL,
+    expires_at REAL NOT NULL
+);
 """
+
+_USER_CODE_ALPHABET = "BCDFGHJKMNPQRSTVWXZ23456789"  # 无易混字符(0/O/1/I/L/E/A/U/Y)
 
 
 class Store:
@@ -172,6 +186,84 @@ class Store:
     def revoke_api_key(self, user_id: int, key_id: int) -> bool:
         cur = self._exec("UPDATE api_keys SET revoked=1 WHERE id=? AND user_id=?", (key_id, user_id))
         return cur.rowcount > 0
+
+    # ---------- 设备授权(RFC 8628 风格,feishu-cli / taptap 同款流程) ----------
+
+    def device_start(self, label: str, ttl: float = 600.0, poll_interval: float = 3.0) -> dict:
+        """发起设备授权:返回 device_code(明文,只此一次)与 user_code。库中只存 device_code 哈希。"""
+        device_code = "dfd_" + secrets.token_urlsafe(32)
+        now = time.time()
+        for _ in range(10):  # user_code 撞库重试
+            raw = "".join(secrets.choice(_USER_CODE_ALPHABET) for _ in range(8))
+            user_code = f"{raw[:4]}-{raw[4:]}"
+            try:
+                self._exec(
+                    "INSERT INTO device_codes(device_hash, user_code, label, poll_interval, created_at, expires_at) "
+                    "VALUES(?,?,?,?,?,?)",
+                    (hash_api_key(device_code), user_code, label[:80] or "cli", poll_interval, now, now + ttl),
+                )
+                break
+            except sqlite3.IntegrityError:
+                continue
+        else:
+            raise RuntimeError("user_code 生成失败,请重试")
+        return {
+            "device_code": device_code,
+            "user_code": user_code,
+            "expires_in": int(ttl),
+            "interval": poll_interval,
+        }
+
+    @staticmethod
+    def normalize_user_code(code: str) -> str:
+        raw = code.strip().upper().replace("-", "").replace(" ", "")
+        return f"{raw[:4]}-{raw[4:]}" if len(raw) == 8 else code.strip().upper()
+
+    def device_decide(self, user_code: str, user_id: int, approve: bool) -> str:
+        """用户在浏览器/程序侧对 user_code 做出决定。返回结果状态。"""
+        code = self.normalize_user_code(user_code)
+        rows = self._query("SELECT * FROM device_codes WHERE user_code=?", (code,))
+        if not rows:
+            return "not_found"
+        row = rows[0]
+        if row["status"] == "pending" and time.time() > row["expires_at"]:
+            self._exec("UPDATE device_codes SET status='expired' WHERE id=?", (row["id"],))
+            return "expired"
+        if row["status"] != "pending":
+            return row["status"]
+        status = "approved" if approve else "denied"
+        self._exec("UPDATE device_codes SET status=?, user_id=? WHERE id=?", (status, user_id, row["id"]))
+        return status
+
+    def device_poll(self, device_code: str) -> dict:
+        """CLI 轮询:pending/slow_down/approved(一次性发 API Key)/denied/expired/invalid。"""
+        rows = self._query("SELECT * FROM device_codes WHERE device_hash=?", (hash_api_key(device_code),))
+        if not rows:
+            return {"status": "invalid"}
+        row = rows[0]
+        now = time.time()
+        if row["status"] == "pending":
+            if now > row["expires_at"]:
+                self._exec("UPDATE device_codes SET status='expired' WHERE id=?", (row["id"],))
+                return {"status": "expired"}
+            if row["last_poll"] and now - row["last_poll"] < row["poll_interval"]:
+                return {"status": "slow_down", "interval": row["poll_interval"]}
+            self._exec("UPDATE device_codes SET last_poll=? WHERE id=?", (now, row["id"]))
+            return {"status": "authorization_pending", "interval": row["poll_interval"]}
+        if row["status"] == "approved":
+            user = self.get_user(row["user_id"])
+            if not user:
+                return {"status": "invalid"}
+            key = self.create_api_key(user["id"], f"device:{row['label']}")
+            self._exec("UPDATE device_codes SET status='claimed' WHERE id=?", (row["id"],))
+            return {
+                "status": "approved",
+                "api_key": key["key"],
+                "key_id": key["id"],
+                "username": user["username"],
+                "role": user["role"],
+            }
+        return {"status": row["status"]}  # denied / claimed / expired
 
     # ---------- 数据集 ----------
 

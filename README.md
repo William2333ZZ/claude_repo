@@ -14,7 +14,12 @@ pip install -e .
 datafoundry demo          # 离线演示:脏数据 -> 漏斗流水线 -> 留存/死因报告
 
 datafoundry serve         # 起 HTTP API(默认 127.0.0.1:8321)
-# 首次: POST /auth/bootstrap 创建 admin -> 登录 -> POST /auth/keys 拿 API Key
+# 首次: POST /auth/bootstrap 创建 admin(或 datafoundry create-user)
+
+datafoundry login         # 设备授权登录(RFC 8628,同 feishu-cli/TapTap 模式):
+                          # 打印验证链接+授权码 -> 任意浏览器确认 -> 凭据存 ~/.datafoundry(0600)
+datafoundry login --no-wait --json   # Agent 两段式:先拿 device_code,--device-code 续轮询
+datafoundry whoami && datafoundry logout   # 查身份 / 吊销 Key 并清凭据
 
 # 接入 Claude Code(8 个 MCP 工具:传数据/查算子/估成本/跑流水线/看死因):
 claude mcp add datafoundry \
@@ -83,6 +88,7 @@ flowchart LR
 | [docs/03-路线图与风险.md](docs/03-路线图与风险.md) | 90 天 MVP、6/12 个月里程碑、风险对策、成功指标、留给你决策的开放问题 |
 | [docs/04-质量从哪来与依赖边界.md](docs/04-质量从哪来与依赖边界.md) | **追问与修正**：质量的生产函数（源×变换×判别×验证×反馈）；依赖红线 v2——**闭源零依赖，开源可依赖但薄适配**、配方表达自持 |
 | [docs/05-平台v0.1架构.md](docs/05-平台v0.1架构.md) | **平台实现**：自研架构、漏斗编译器、血缘、开源鉴权组件（argon2+JWT+RBAC）、Claude Code MCP 接入、v0.1 边界与下一步 |
+| [docs/06-CLI登录流程调研与实现.md](docs/06-CLI登录流程调研与实现.md) | **CLI 登录**：feishu-cli / TapTap 登录流程调研（设备授权流 RFC 8628），DataFoundry `login/whoami/logout` 实现与烟测记录 |
 
 ---
 

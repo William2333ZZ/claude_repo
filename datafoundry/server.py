@@ -13,10 +13,13 @@
 """
 from __future__ import annotations
 
+import html
 import threading
+import urllib.parse
 from pathlib import Path
 
-from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query
+from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Request
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 
 import datafoundry.ops  # noqa: F401  导入即注册内置算子
@@ -48,6 +51,19 @@ class KeyBody(BaseModel):
 class EstimateBody(BaseModel):
     dataset_id: str
     steps: list[dict]
+
+
+class DeviceStartBody(BaseModel):
+    label: str = "cli"
+
+
+class DeviceTokenBody(BaseModel):
+    device_code: str
+
+
+class DeviceDecideBody(BaseModel):
+    user_code: str
+    action: str = "approve"  # approve | deny
 
 
 class RunBody(BaseModel):
@@ -135,6 +151,76 @@ def create_app(store: Store | None = None) -> FastAPI:
             raise HTTPException(404, "无此 Key 或不属于你")
         store.audit(user["username"], "revoke_api_key", str(key_id))
         return {"revoked": key_id}
+
+    # ---------- 设备授权登录(RFC 8628 风格,同 feishu-cli / TapTap 模式) ----------
+
+    @app.post("/auth/device/start")
+    def device_start(body: DeviceStartBody, request: Request):
+        grant = store.device_start(body.label)
+        base = str(request.base_url).rstrip("/")
+        store.audit("anonymous", "device_start", f"{grant['user_code']} label={body.label}")
+        return {
+            **grant,
+            "verification_uri": f"{base}/device",
+            "verification_uri_complete": f"{base}/device?code={urllib.parse.quote(grant['user_code'])}",
+        }
+
+    @app.post("/auth/device/token")
+    def device_token(body: DeviceTokenBody):
+        result = store.device_poll(body.device_code)
+        if result["status"] == "approved":
+            store.audit(result["username"], "device_claim", f"key_id={result['key_id']}")
+        return result
+
+    @app.post("/auth/device/decide")
+    def device_decide(body: DeviceDecideBody, user: dict = Depends(current_user)):
+        status = store.device_decide(body.user_code, user["id"], body.action == "approve")
+        if status == "not_found":
+            raise HTTPException(404, "无此授权码(user_code),请核对后重试")
+        store.audit(user["username"], "device_decide", f"{body.user_code} -> {status}")
+        return {"user_code": store.normalize_user_code(body.user_code), "status": status}
+
+    _PAGE = """<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DataFoundry 设备授权</title><style>
+body{{font-family:system-ui,sans-serif;background:#f6f7f9;color:#1b2430;display:flex;justify-content:center;padding:3rem 1rem}}
+.card{{background:#fff;border:1px solid #e2e6eb;border-radius:10px;padding:2rem;max-width:22rem;width:100%}}
+h1{{font-size:1.1rem;margin:0 0 1rem}}label{{display:block;font-size:.85rem;margin:.8rem 0 .25rem;color:#5c6672}}
+input{{width:100%;box-sizing:border-box;padding:.5rem .6rem;border:1px solid #cfd6dd;border-radius:6px;font-size:1rem}}
+input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}}
+.row{{display:flex;gap:.6rem;margin-top:1.2rem}}button{{flex:1;padding:.55rem;border-radius:6px;border:1px solid transparent;font-size:.95rem;cursor:pointer}}
+.ok{{background:#1b2430;color:#fff}}.no{{background:#fff;border-color:#cfd6dd;color:#5c6672}}
+.msg{{margin-top:1rem;font-size:.9rem}}.err{{color:#c92a2a}}.good{{color:#2b8a3e}}
+</style></head><body><div class="card"><h1>DataFoundry 设备授权</h1>
+<form method="post" action="/device/decide">
+<label>授权码(终端里显示的 user_code)</label><input name="user_code" value="{code}" required>
+<label>用户名</label><input name="username" autocomplete="username" required>
+<label>口令</label><input name="password" type="password" autocomplete="current-password" required>
+<div class="row"><button class="ok" name="action" value="approve">授权</button>
+<button class="no" name="action" value="deny">拒绝</button></div></form>
+<p class="msg {cls}">{msg}</p></div></body></html>"""
+
+    @app.get("/device", response_class=HTMLResponse)
+    def device_page(code: str = Query(default="")):
+        return _PAGE.format(code=html.escape(code)[:20], cls="", msg="确认后回到终端即可。")
+
+    @app.post("/device/decide", response_class=HTMLResponse)
+    async def device_decide_web(request: Request):
+        raw = (await request.body()).decode("utf-8")
+        form = {k: v[0] for k, v in urllib.parse.parse_qs(raw).items()}
+        user_code = html.escape(form.get("user_code", ""))[:20]
+        user = store.authenticate(form.get("username", ""), form.get("password", ""))
+        if not user:
+            store.audit(form.get("username", "?")[:40], "device_decide_web_fail", user_code)
+            return _PAGE.format(code=user_code, cls="err", msg="用户名或口令错误,请重试。")
+        status = store.device_decide(form.get("user_code", ""), user["id"], form.get("action") == "approve")
+        store.audit(user["username"], "device_decide", f"{user_code} -> {status}")
+        if status == "approved":
+            return _PAGE.format(code="", cls="good", msg=f"已授权({user['username']}/{user['role']})。回到终端即可,本页可关闭。")
+        if status == "denied":
+            return _PAGE.format(code="", cls="good", msg="已拒绝该授权请求。本页可关闭。")
+        hints = {"not_found": "授权码不存在,请核对。", "expired": "授权码已过期,请在终端重新发起登录。"}
+        return _PAGE.format(code=user_code, cls="err", msg=hints.get(status, f"当前状态: {status}"))
 
     # ---------- 用户管理(admin) ----------
 

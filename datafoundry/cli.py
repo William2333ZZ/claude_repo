@@ -40,6 +40,109 @@ def cmd_create_user(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_login(args: argparse.Namespace) -> int:
+    """设备授权登录(RFC 8628,同 feishu-cli / TapTap 模式);--password 为直连口令登录。"""
+    import time
+    import webbrowser
+
+    from datafoundry.credentials import credentials_path, save_credentials
+    from datafoundry.mcp_server import ApiClient
+
+    client = ApiClient(base_url=args.url)
+
+    def emit(event: dict) -> None:
+        if args.json:
+            print(json.dumps(event, ensure_ascii=False))
+
+    if args.password:  # 直连口令登录 -> 签发 API Key
+        username = args.username or input("用户名: ")
+        password = getpass.getpass("口令: ")
+        login = client.call("POST", "/auth/login", {"username": username, "password": password})
+        authed = ApiClient(base_url=client.base_url)
+        authed.api_key = ""  # 用 Bearer 走一次发 Key
+        import urllib.request as _ur
+
+        req = _ur.Request(
+            f"{client.base_url}/auth/keys",
+            data=json.dumps({"label": args.label}).encode(),
+            headers={"Content-Type": "application/json", "Authorization": f"Bearer {login['token']}"},
+            method="POST",
+        )
+        with _ur.urlopen(req, timeout=30) as resp:
+            key = json.loads(resp.read())
+        path = save_credentials(client.base_url, key["key"], username, login["role"], key["id"])
+        print(f"已登录 {username}({login['role']}),凭据保存至 {path}")
+        return 0
+
+    if args.device_code:  # 两段式第二步:携带已有 device_code 继续轮询
+        grant = {"device_code": args.device_code, "interval": 3, "expires_in": 600}
+    else:
+        grant = client.call("POST", "/auth/device/start", {"label": args.label})
+        emit({"event": "device_start", **{k: grant[k] for k in ("device_code", "user_code", "expires_in")},
+              "verification_uri_complete": grant["verification_uri_complete"]})
+        if not args.json:
+            print("在任意设备的浏览器打开并完成授权:")
+            print(f"  {grant['verification_uri_complete']}")
+            print(f"  授权码: {grant['user_code']}(页面已预填,核对即可)")
+        try:
+            webbrowser.open(grant["verification_uri_complete"])
+        except Exception:
+            pass  # SSH/无图形环境静默失败,链接已打印
+        if args.no_wait:
+            if not args.json:
+                print(f"\n--no-wait:稍后用以下命令续轮询\n  datafoundry login --device-code {grant['device_code']}")
+            return 0
+
+    interval = float(grant.get("interval", 3))
+    deadline = time.time() + float(grant.get("expires_in", 600))
+    if not args.json:
+        print("等待授权中...(Ctrl-C 取消)")
+    while time.time() < deadline:
+        time.sleep(interval)
+        result = client.call("POST", "/auth/device/token", {"device_code": grant["device_code"]})
+        status = result["status"]
+        emit({"event": status})
+        if status == "authorization_pending":
+            continue
+        if status == "slow_down":
+            interval += 2
+            continue
+        if status == "approved":
+            path = save_credentials(client.base_url, result["api_key"], result["username"],
+                                    result["role"], result.get("key_id"))
+            emit({"event": "saved", "path": str(path)})
+            if not args.json:
+                print(f"已登录 {result['username']}({result['role']}),凭据保存至 {credentials_path()}")
+            return 0
+        print(f"登录失败: {status}", file=sys.stderr)
+        return 1
+    print("登录超时:授权码已过期,请重新 datafoundry login", file=sys.stderr)
+    return 1
+
+
+def cmd_whoami(_: argparse.Namespace) -> int:
+    from datafoundry.mcp_server import ApiClient
+
+    me = ApiClient().call("GET", "/auth/me")
+    print(json.dumps(me, ensure_ascii=False))
+    return 0
+
+
+def cmd_logout(_: argparse.Namespace) -> int:
+    from datafoundry.credentials import clear_credentials, load_credentials
+    from datafoundry.mcp_server import ApiClient
+
+    creds = load_credentials()
+    if creds and creds.get("key_id") is not None:
+        try:  # 尽力吊销服务端 Key;失败不阻塞本地登出
+            ApiClient().call("DELETE", f"/auth/keys/{creds['key_id']}")
+            print(f"已吊销服务端 API Key(id={creds['key_id']})")
+        except Exception as exc:
+            print(f"服务端吊销失败(已忽略): {exc}", file=sys.stderr)
+    print("已清除本地凭据" if clear_credentials() else "本地没有凭据")
+    return 0
+
+
 def cmd_demo(args: argparse.Namespace) -> int:
     """离线演示:生成脏数据 → 漏斗流水线 → 打印 manifest 摘要。不起服务、不需要账号。"""
     import datafoundry.ops  # noqa: F401
@@ -103,6 +206,22 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("mcp", help="以 MCP stdio 服务运行(给 Claude Code 接入)")
     p.set_defaults(func=cmd_mcp)
+
+    p = sub.add_parser("login", help="登录:默认设备授权流(浏览器确认),--password 为口令直连")
+    p.add_argument("--url", default=None, help="服务地址(默认 $DATAFOUNDRY_URL 或凭据文件或 127.0.0.1:8321)")
+    p.add_argument("--label", default="cli", help="API Key 标签")
+    p.add_argument("--no-wait", action="store_true", help="两段式:拿到 device_code 立即返回,不轮询(Agent 场景)")
+    p.add_argument("--device-code", default=None, help="两段式:携带已有 device_code 续轮询")
+    p.add_argument("--password", action="store_true", help="口令直连登录(不走浏览器)")
+    p.add_argument("--username", default=None)
+    p.add_argument("--json", action="store_true", help="事件流 JSON 输出(Agent 场景)")
+    p.set_defaults(func=cmd_login)
+
+    p = sub.add_parser("whoami", help="查看当前登录身份")
+    p.set_defaults(func=cmd_whoami)
+
+    p = sub.add_parser("logout", help="吊销服务端 Key 并清除本地凭据")
+    p.set_defaults(func=cmd_logout)
 
     p = sub.add_parser("create-user", help="创建用户(直连本地库,用于引导)")
     p.add_argument("--username", required=True)
