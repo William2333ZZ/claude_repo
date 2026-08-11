@@ -19,6 +19,14 @@ on:
         description: "初始管理员用户名"
         default: "william"
         required: true
+      hf_token:
+        description: "HF write token(优先用仓库 secret HF_TOKEN;此输入仅在无 secret 时使用)"
+        default: ""
+        required: false
+      admin_password:
+        description: "管理员口令(优先用 secret DF_ADMIN_PASSWORD)"
+        default: ""
+        required: false
 
 jobs:
   deploy:
@@ -32,10 +40,18 @@ jobs:
 
       - run: pip install "huggingface_hub>=0.24"
 
+      - name: Mask credentials in logs
+        env:
+          IN_TOKEN: ${{ inputs.hf_token }}
+          IN_PW: ${{ inputs.admin_password }}
+        run: |
+          [ -n "$IN_TOKEN" ] && echo "::add-mask::$IN_TOKEN" || true
+          [ -n "$IN_PW" ] && echo "::add-mask::$IN_PW" || true
+
       - name: Deploy to Space
         env:
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          DF_ADMIN_PASSWORD: ${{ secrets.DF_ADMIN_PASSWORD }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN != '' && secrets.HF_TOKEN || inputs.hf_token }}
+          DF_ADMIN_PASSWORD: ${{ secrets.DF_ADMIN_PASSWORD != '' && secrets.DF_ADMIN_PASSWORD || inputs.admin_password }}
           SPACE_NAME: ${{ inputs.space_name }}
           ADMIN_USER: ${{ inputs.admin_user }}
         run: |
