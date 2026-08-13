@@ -36,6 +36,7 @@ def billing_enabled() -> bool:
 
 class PaymentProvider(ABC):
     name = ""
+    ack_response: str | None = None  # 网关要求的通知应答明文(如支付宝的 "success");None=JSON 应答
 
     @abstractmethod
     def create_payment(self, order: dict) -> dict:
@@ -170,22 +171,55 @@ class WechatPayProvider(PaymentProvider):
 
 
 class AlipayProvider(PaymentProvider):
-    """薄适配官方 SDK alipay-sdk-python(RSA2 签名);当面付/页面支付按外壳需要选接口。
-    需真实商户号联调,v0 仅占位声明配置面。"""
+    """当面付路线(pip install "datafoundry[billing-alipay]",即 python-alipay-sdk):
+    trade.precreate 预下单出 qr_code(转二维码扫码付),异步通知 RSA2 验签。
+    ALIPAY_SANDBOX=1 走沙箱网关(开放平台沙箱环境,无需提审签约即可联调)。
+    注意:支付宝要求通知应答明文 "success"(ack_response 机制,webhook 端点会遵守)。"""
 
     name = "alipay"
+    ack_response = "success"
 
     def __init__(self):
-        raise ValueError(
-            "支付宝适配待联调:pip install alipay-sdk-python,配置 ALIPAY_APPID/ALIPAY_PRIVATE_KEY/"
-            "ALIPAY_PUBLIC_KEY 后在此实现下单与验签(接口形态同上两家)"
+        try:
+            from alipay import AliPay
+        except ImportError:
+            raise ValueError(
+                '支付宝需要可选依赖:pip install "datafoundry[billing-alipay]"(python-alipay-sdk,开源)'
+            ) from None
+        appid = os.environ.get("ALIPAY_APPID", "")
+        priv = os.environ.get("ALIPAY_APP_PRIVATE_KEY", "")
+        pub = os.environ.get("ALIPAY_PUBLIC_KEY", "")
+        if not (appid and priv and pub):
+            raise ValueError("支付宝需要 ALIPAY_APPID / ALIPAY_APP_PRIVATE_KEY / ALIPAY_PUBLIC_KEY")
+        self._client = AliPay(
+            appid=appid,
+            app_notify_url=os.environ.get("ALIPAY_NOTIFY_URL", ""),
+            app_private_key_string=priv,
+            alipay_public_key_string=pub,
+            sign_type="RSA2",
+            debug=os.environ.get("ALIPAY_SANDBOX", "") == "1",  # 沙箱网关开关
         )
 
-    def create_payment(self, order):  # pragma: no cover
-        raise NotImplementedError
+    def create_payment(self, order):
+        result = self._client.api_alipay_trade_precreate(
+            out_trade_no=order["id"],
+            total_amount=f"{order['amount_cents'] / 100:.2f}",
+            subject=f"DataFoundry {order['plan']}",
+        )
+        if result.get("code") != "10000":
+            raise RuntimeError(
+                f"支付宝预下单失败: {result.get('code')} {result.get('sub_msg') or result.get('msg')}"
+            )
+        return {"code_url": result["qr_code"], "note": "转二维码后用支付宝(沙箱钱包)扫码支付"}
 
-    def parse_webhook(self, headers, body):  # pragma: no cover
-        raise NotImplementedError
+    def parse_webhook(self, headers, body):
+        data = {k: v[0] for k, v in urllib.parse.parse_qs(body.decode("utf-8")).items()}
+        signature = data.pop("sign", "")
+        if not signature or not self._client.verify(data, signature):
+            return None
+        if data.get("trade_status") in ("TRADE_SUCCESS", "TRADE_FINISHED"):
+            return {"order_id": data.get("out_trade_no", "")}
+        return None
 
 
 _PROVIDERS = {"mock": MockProvider, "stripe": StripeProvider, "wechatpay": WechatPayProvider, "alipay": AlipayProvider}

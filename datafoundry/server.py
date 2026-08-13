@@ -418,6 +418,11 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
         order = store.mark_order_paid(event["order_id"])  # 幂等
         if order:
             store.audit("webhook", "billing_paid", f"{order['id']} +{order['credits']} credits")
+        if provider.ack_response is not None:  # 支付宝等网关要求明文应答,否则会重试通知
+            from fastapi.responses import PlainTextResponse
+
+            return PlainTextResponse(provider.ack_response)
+        if order:
             return {"credited": order["credits"], "order_id": order["id"]}
         return {"note": "订单不存在或已处理(幂等)"}
 
