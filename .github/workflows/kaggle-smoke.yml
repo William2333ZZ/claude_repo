@@ -1,0 +1,38 @@
+# Kaggle 鉴权烟测:验证 KGAT_ 新式 API token 在跑器上能否独立鉴权。
+# 前置:仓库 Secret KAGGLE_API_TOKEN(可选 KAGGLE_USERNAME,老式鉴权回退用)。
+# 通过后下一步才搭 7B QLoRA 训练 kernel(kaggle 免费 GPU,周额度 30h)。
+
+name: kaggle-smoke
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  auth:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Guard secret
+        run: |
+          if [ -z "${{ secrets.KAGGLE_API_TOKEN }}" ]; then
+            echo "::error::缺少仓库 Secret KAGGLE_API_TOKEN"; exit 1; fi
+      - run: pip install --quiet kaggle kagglehub
+      - name: Try auth paths
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+          KAGGLE_USERNAME: ${{ secrets.KAGGLE_USERNAME }}
+          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          ok=0
+          echo "== path A: kagglehub.whoami(KAGGLE_API_TOKEN) =="
+          python - <<'EOF' && ok=1 || true
+          import kagglehub
+          print("kagglehub whoami:", kagglehub.whoami())
+          EOF
+          echo "== path B: kaggle CLI(KAGGLE_USERNAME/KAGGLE_KEY) =="
+          if kaggle kernels list --page-size 1 2>&1 | head -5; then ok=1; fi
+          if [ "$ok" = "0" ]; then
+            echo "::error::两条鉴权路径都失败。若仅配了 KAGGLE_API_TOKEN,请补配 KAGGLE_USERNAME(Kaggle 个人页用户名)"
+            exit 1
+          fi
+          echo "AUTH_OK"
