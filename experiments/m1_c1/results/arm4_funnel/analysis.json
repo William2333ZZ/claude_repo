@@ -1,12 +1,12 @@
 {
   "n_in": 5000,
-  "n_out": 2422,
+  "n_out": 2423,
   "est_cost_total": 36.5604,
   "clean_retention": 0.728,
   "noise_kill_rate": {
     "dup": 0.548,
     "near_dup": 0.5,
-    "offtopic": 1.0,
+    "offtopic": 0.9971,
     "spam": 1.0,
     "wrong_answer": 1.0
   },
@@ -41,12 +41,12 @@
     },
     "offtopic": {
       "total": 350,
-      "kept": 0,
-      "retention": 0.0,
+      "kept": 1,
+      "retention": 0.0029,
       "killed_by": {
         "minhash_dedup": 3,
         "math_answer_verify": 335,
-        "llm_judge_filter": 12
+        "llm_judge_filter": 11
       }
     },
     "spam": {
