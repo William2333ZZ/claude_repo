@@ -1,0 +1,108 @@
+# [M1-C1] 7B 复验跳板:Actions 把训练 kernel 推到 Kaggle 免费 GPU(P100/T4)上跑。
+# kernel 内部:克隆本仓库(公开)-> 复放确定性产线 -> QLoRA 训练+评测(协议同 CPU 代理)。
+# 前置:Secrets KAGGLE_API_TOKEN(kaggle-smoke 已验证,账号 s4526291)。
+# 注:仅支持零 LLM 的确定性组(arm1/arm3/arm4a);LLM 组的 7B 复验待后续把判审产物直接入库。
+
+name: kaggle-7b
+
+on:
+  workflow_dispatch:
+    inputs:
+      arm:
+        description: "组名(零 LLM 确定性组)"
+        type: choice
+        options: [arm4a_funnel_verify, arm1_heuristic, arm3_scorer, baseline]
+        default: arm4a_funnel_verify
+      seed:
+        description: "训练种子"
+        default: "42"
+        required: true
+
+jobs:
+  push-kernel:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard secret
+        run: |
+          if [ -z "${{ secrets.KAGGLE_API_TOKEN }}" ]; then
+            echo "::error::缺少仓库 Secret KAGGLE_API_TOKEN"; exit 1; fi
+      - run: pip install --quiet kaggle
+      - name: Compose kernel
+        run: |
+          mkdir -p kernel
+          SLUG="df-7b-$(echo '${{ inputs.arm }}' | tr '_' '-')-s${{ inputs.seed }}"
+          echo "SLUG=$SLUG" >> $GITHUB_ENV
+          cat > kernel/kernel-metadata.json <<EOF
+          {
+            "id": "s4526291/$SLUG",
+            "title": "$SLUG",
+            "code_file": "run.py",
+            "language": "python",
+            "kernel_type": "script",
+            "is_private": true,
+            "enable_gpu": true,
+            "enable_internet": true,
+            "dataset_sources": [],
+            "competition_sources": [],
+            "kernel_sources": []
+          }
+          EOF
+          cat > kernel/run.py <<'EOF'
+          import os, subprocess, sys
+          BRANCH = "claude/nemo-data-juicer-dataflow-integration-7ozc7z"
+          ARM = "__ARM__"
+          SEED = "__SEED__"
+          run = lambda c: subprocess.run(c, shell=True, check=True)
+          run(f"git clone --depth 1 -b {BRANCH} https://github.com/William2333ZZ/claude_repo.git repo")
+          os.chdir("repo")
+          run("pip install --quiet -e . 'peft>=0.12' bitsandbytes accelerate")
+          run("python experiments/m1_c1/generate_corpus.py")
+          env = {**os.environ, "TRAIN_SEED": SEED}
+          if ARM == "baseline":
+              subprocess.run([sys.executable, "scripts/train_7b_qlora.py", "--skip-train",
+                              "--data", "evalsets/math_zh_v1.jsonl", "--out", "/kaggle/working/result"],
+                             env=env, check=True)
+          else:
+              run(f"python experiments/m1_c1/run_arm.py --arm {ARM}")
+              subprocess.run([sys.executable, "scripts/train_7b_qlora.py",
+                              "--data", f"experiments/m1_c1/results/{ARM}/output.jsonl",
+                              "--out", "/kaggle/working/result"], env=env, check=True)
+          run("cp /kaggle/working/result/eval_report.json /kaggle/working/")
+          print("KERNEL_DONE")
+          EOF
+          sed -i "s/__ARM__/${{ inputs.arm }}/; s/__SEED__/${{ inputs.seed }}/" kernel/run.py
+      - name: Push kernel to Kaggle GPU
+        env:
+          KAGGLE_USERNAME: s4526291
+          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: kaggle kernels push -p kernel
+      - name: Poll until complete
+        env:
+          KAGGLE_USERNAME: s4526291
+          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          for i in $(seq 1 100); do
+            sleep 180
+            ST=$(kaggle kernels status "s4526291/$SLUG" 2>&1 || true)
+            echo "[poll $i] $ST"
+            case "$ST" in
+              *complete*) break ;;
+              *error*|*cancel*) echo "::error::kernel 失败: $ST"; kaggle kernels output "s4526291/$SLUG" -p out || true; tail -50 out/*.log 2>/dev/null || true; exit 1 ;;
+            esac
+            if [ "$i" = "100" ]; then echo "::warning::超时未完成,kernel 仍在 Kaggle 运行,稍后用 kaggle kernels output 取结果"; exit 1; fi
+          done
+      - name: Fetch result
+        env:
+          KAGGLE_USERNAME: s4526291
+          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          kaggle kernels output "s4526291/$SLUG" -p out
+          echo "===== eval_report.json ====="
+          cat out/eval_report.json 2>/dev/null || echo "(未找到 eval_report.json)"
+          echo "===== log tail ====="
+          tail -30 out/*.log 2>/dev/null || true
