@@ -187,8 +187,8 @@ class AlipayProvider(PaymentProvider):
                 '支付宝需要可选依赖:pip install "datafoundry[billing-alipay]"(python-alipay-sdk,开源)'
             ) from None
         appid = os.environ.get("ALIPAY_APPID", "")
-        priv = os.environ.get("ALIPAY_APP_PRIVATE_KEY", "")
-        pub = os.environ.get("ALIPAY_PUBLIC_KEY", "")
+        priv = self._normalize_pem(os.environ.get("ALIPAY_APP_PRIVATE_KEY", ""), "RSA PRIVATE KEY")
+        pub = self._normalize_pem(os.environ.get("ALIPAY_PUBLIC_KEY", ""), "PUBLIC KEY")
         if not (appid and priv and pub):
             raise ValueError("支付宝需要 ALIPAY_APPID / ALIPAY_APP_PRIVATE_KEY / ALIPAY_PUBLIC_KEY")
         self._client = AliPay(
@@ -199,6 +199,16 @@ class AlipayProvider(PaymentProvider):
             sign_type="RSA2",
             debug=os.environ.get("ALIPAY_SANDBOX", "") == "1",  # 沙箱网关开关
         )
+
+    @staticmethod
+    def _normalize_pem(key: str, kind: str) -> str:
+        """支付宝控制台展示的是无头尾的单行 base64;SDK 需要 PEM。裸串自动包装,已含头尾则原样。"""
+        key = key.strip()
+        if not key or "-----BEGIN" in key:
+            return key
+        body = "".join(key.split())
+        lines = "\n".join(body[i : i + 64] for i in range(0, len(body), 64))
+        return f"-----BEGIN {kind}-----\n{lines}\n-----END {kind}-----"
 
     def create_payment(self, order):
         result = self._client.api_alipay_trade_precreate(
