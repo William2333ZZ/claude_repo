@@ -70,9 +70,15 @@ jobs:
           import torch
           cap = torch.cuda.get_device_capability() if torch.cuda.is_available() else (0, 0)
           print("GPU capability:", cap)
-          if cap and cap < (7, 0):  # P100 等 Pascal:预装 torch 不支持 sm_60,降级 cu118 版
+          if cap and cap < (7, 0):
+              # Pascal(P100)自愈:预装 torch 不支持 sm_60,降级 cu118;但预装
+              # torchvision/bitsandbytes 按新 torch 编译(run4 实证 torchvision::nms
+              # 崩掉 transformers 导入)——必须卸掉,并成套锁 2024-Q4 兼容训练栈。
               run("pip install --quiet 'torch==2.4.1' --index-url https://download.pytorch.org/whl/cu118")
-          run("pip install --quiet -e . 'peft>=0.12' bitsandbytes accelerate")
+              run("pip uninstall --quiet -y torchvision torchaudio bitsandbytes")
+              run("pip install --quiet 'transformers==4.46.3' 'peft==0.13.2' 'accelerate==1.1.1' -e .")
+          else:
+              run("pip install --quiet -e . 'peft>=0.12' bitsandbytes accelerate")
           run("python experiments/m1_c1/generate_corpus.py")
           env = {**os.environ, "TRAIN_SEED": SEED, "TRAIN_MODEL": MODEL}
           if ARM == "baseline":

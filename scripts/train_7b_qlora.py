@@ -138,8 +138,10 @@ def main() -> int:
         print(f"eval [{i}/{len(items)}]", flush=True)
 
     acc = round(correct / len(items) * 100, 1)
+    import transformers as _tfm
     report = {"accuracy": acc, "correct": correct, "total": len(items), "model": MODEL,
-              "seed": SEED, "train_seconds": train_seconds, "skip_train": args.skip_train}
+              "seed": SEED, "train_seconds": train_seconds, "skip_train": args.skip_train,
+              "torch": torch.__version__, "transformers": _tfm.__version__}
     (out / "eval_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     with open(out / "generations.jsonl", "w", encoding="utf-8") as fh:
         for g in gens:
