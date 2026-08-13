@@ -38,6 +38,10 @@ jobs:
           BRANCH: ${{ github.ref_name }}
           STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
           STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+          ALIPAY_APPID: ${{ secrets.ALIPAY_APPID }}
+          ALIPAY_APP_PRIVATE_KEY: ${{ secrets.ALIPAY_APP_PRIVATE_KEY }}
+          ALIPAY_PUBLIC_KEY: ${{ secrets.ALIPAY_PUBLIC_KEY }}
+          ALIPAY_SANDBOX: ${{ vars.ALIPAY_SANDBOX }}
         run: |
           python - <<'EOF'
           import json, os, sys, time, urllib.request
@@ -75,9 +79,16 @@ jobs:
           print("owner:", owner_id)
 
           env_vars = [{"key": "DATAFOUNDRY_BOOTSTRAP_ADMIN", "value": f"{ADMIN}:{PW}"}]
-          # 计费:配置了 Stripe secrets 就自动启用(未配置则计费保持关闭,平台行为不变)
+          # 计费:按已配置的 secrets 自动启用(支付宝优先,其次 Stripe;都未配置则保持关闭)
+          ali = {k: os.environ.get(k, "") for k in ("ALIPAY_APPID", "ALIPAY_APP_PRIVATE_KEY", "ALIPAY_PUBLIC_KEY")}
           sk, whsec = os.environ.get("STRIPE_API_KEY", ""), os.environ.get("STRIPE_WEBHOOK_SECRET", "")
-          if sk and whsec:
+          if all(ali.values()):
+              env_vars += [{"key": "DATAFOUNDRY_BILLING_PROVIDER", "value": "alipay"},
+                           {"key": "ALIPAY_NOTIFY_URL", "value": f"https://{NAME}.onrender.com/billing/webhook"},
+                           {"key": "ALIPAY_SANDBOX", "value": os.environ.get("ALIPAY_SANDBOX", "") or "0"}]
+              env_vars += [{"key": k, "value": v} for k, v in ali.items()]
+              print("计费:支付宝已启用(沙箱=" + (os.environ.get("ALIPAY_SANDBOX", "") or "0") + ")")
+          elif sk and whsec:
               env_vars += [
                   {"key": "DATAFOUNDRY_BILLING_PROVIDER", "value": "stripe"},
                   {"key": "STRIPE_API_KEY", "value": sk},
@@ -86,7 +97,7 @@ jobs:
               ]
               print("计费:Stripe 已启用")
           else:
-              print("计费:未配置 Stripe secrets,保持关闭")
+              print("计费:未配置支付 secrets,保持关闭")
 
           # 2) 已存在则复用:更新环境变量并触发部署
           st, existing = call("GET", f"/services?name={NAME}&limit=5")
