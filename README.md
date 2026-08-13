@@ -5,7 +5,7 @@
 > 可插拔引擎接入。平台本身是 **Claude Code 可驱动的 harness**——Agent 的能力严格等于其
 > API Key 对应用户的角色。
 
-本仓库包含：`datafoundry/` 平台代码（v0.1，52 例测试全绿）+ `docs/` 产品思考文档集。
+本仓库包含：`datafoundry/` 平台代码（v0.1，57 例测试全绿）+ `docs/` 产品思考文档集。
 
 ## 平台 v0.1 快速上手
 
@@ -15,6 +15,7 @@ datafoundry demo          # 离线演示:脏数据 -> 漏斗流水线 -> 留存/
 
 datafoundry recipes       # 命名配方:简单算子的组合,每个带实验证据出处
 datafoundry refine --recipe math_zh_funnel_v1 --in data.jsonl   # 一条命令精炼:估成本->漏斗执行->报告
+datafoundry audit --run <运行目录> --standard tc260   # 合规证据包:TC260/EU-AI-Act 口径审计报告
 
 datafoundry serve         # 起 HTTP API(默认 127.0.0.1:8321)
 # 首次: POST /auth/bootstrap 创建 admin(或 datafoundry create-user)
@@ -102,6 +103,7 @@ flowchart LR
 | [docs/14-商业化方案.md](docs/14-商业化方案.md) | **商业化**（产品域全权）：可售卖物清单、客户分层与购买旅程、定价与打包 v1、单位经济、收入里程碑、红线与开放问题 |
 | [docs/15-使用场景与保真阶梯.md](docs/15-使用场景与保真阶梯.md) | **产品设计方法论**：四张客户场景卡 × 低/中/高三级保真、现状诚实矩阵、双轨推进规则（场景轨与技术轨并行）、S1 访谈一页纸 |
 | [docs/16-需求证据与分析.md](docs/16-需求证据与分析.md) | **需求证据**：互联网侧低保真验证——三假设判定（痛点✅/合规血缘✅✅/付费品类🟡）、十条分级证据、需求→工程 backlog 映射、对定价与叙事的影响 |
+| [docs/17-价值与可行性评审.md](docs/17-价值与可行性评审.md) | **价值×可行评审**：12 事项四象限裁定、论点级评审（配方已实/归因零验证）、明确不做清单、资源报备三项（LLM/GPU/支付宝提审） |
 
 ---
 

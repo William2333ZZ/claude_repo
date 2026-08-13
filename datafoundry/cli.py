@@ -253,6 +253,26 @@ def cmd_refine(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_audit(args: argparse.Namespace) -> int:
+    """把一次运行组装为监管口径审计报告(TC260 / EU AI Act Art.10)。"""
+    from datafoundry.audit import STANDARDS, write_report
+
+    run_dir = Path(args.run)
+    if not (run_dir / "manifest.json").exists():
+        print(f"{run_dir} 下没有 manifest.json(需要 refine/run 的输出目录)", file=sys.stderr)
+        return 1
+    try:
+        path = write_report(run_dir, standard=args.standard, sample_n=args.sample_n, seed=args.seed)
+    except KeyError as exc:
+        print(exc.args[0], file=sys.stderr)
+        return 1
+    text = path.read_text(encoding="utf-8")
+    verdict = "通过" if "→ **通过**" in text else "不通过"
+    print(f"审计报告({STANDARDS[args.standard]['title']}):{path}")
+    print(f"抽样核查判定:{verdict}(细节见报告 §4;代理核查,非内容安全认证)")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="datafoundry", description="DataFoundry 数据精炼平台")
     parser.add_argument("--version", action="version", version=f"datafoundry {__version__}")
@@ -306,6 +326,13 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--text-key", default="text", help="文本字段名(默认 text)")
     p.add_argument("--no-funnel", action="store_true", help="按声明顺序执行,不做漏斗重排")
     p.set_defaults(func=cmd_refine)
+
+    p = sub.add_parser("audit", help="合规证据包:运行目录 -> 监管口径审计报告(TC260/EU Art.10)")
+    p.add_argument("--run", required=True, help="refine/run 的输出目录(含 manifest.json)")
+    p.add_argument("--standard", default="tc260", choices=["tc260", "euai10"])
+    p.add_argument("--sample-n", type=int, default=400, help="抽样条数(TC260 条款口径为 4000)")
+    p.add_argument("--seed", type=int, default=20260813, help="抽样种子(固定可复现)")
+    p.set_defaults(func=cmd_audit)
 
     args = parser.parse_args(argv)
     return args.func(args)
