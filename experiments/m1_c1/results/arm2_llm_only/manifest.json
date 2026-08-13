@@ -22,8 +22,8 @@
   ],
   "funnel_moves": [],
   "n_in": 5000,
-  "n_out": 3887,
-  "retention": 0.7774,
+  "n_out": 3884,
+  "retention": 0.7768,
   "est_cost_total": 71.0585,
   "per_op": [
     {
@@ -34,7 +34,7 @@
       "out": 5000,
       "killed": 0,
       "retention": 1.0,
-      "seconds": 0.015,
+      "seconds": 0.024,
       "est_cost": 0.001
     },
     {
@@ -45,7 +45,7 @@
       "out": 4737,
       "killed": 263,
       "retention": 0.9474,
-      "seconds": 0.02,
+      "seconds": 0.03,
       "est_cost": 0.0025
     },
     {
@@ -56,10 +56,10 @@
       },
       "cost_tier": "llm",
       "in": 4737,
-      "out": 3887,
-      "killed": 850,
-      "retention": 0.8206,
-      "seconds": 5352.519,
+      "out": 3884,
+      "killed": 853,
+      "retention": 0.8199,
+      "seconds": 5622.566,
       "est_cost": 71.055
     }
   ],

@@ -1,9 +1,9 @@
 {
   "evalset": "math_zh_v1",
   "n_items": 60,
-  "n_correct": 35,
+  "n_correct": 36,
   "n_missing": 0,
-  "accuracy": 58.3,
+  "accuracy": 60.0,
   "results": [
     {
       "id": "math_zh_v1-change-1",
@@ -78,36 +78,36 @@
     {
       "id": "math_zh_v1-discount-1",
       "want": "384",
-      "got": "3072",
-      "correct": false,
+      "got": "384",
+      "correct": true,
       "missing": false
     },
     {
       "id": "math_zh_v1-discount-2",
       "want": "72",
-      "got": "-600",
-      "correct": false,
+      "got": "72",
+      "correct": true,
       "missing": false
     },
     {
       "id": "math_zh_v1-discount-3",
       "want": "270",
-      "got": "570",
-      "correct": false,
+      "got": "270",
+      "correct": true,
       "missing": false
     },
     {
       "id": "math_zh_v1-discount-4",
       "want": "150",
-      "got": "-1250",
-      "correct": false,
+      "got": "150",
+      "correct": true,
       "missing": false
     },
     {
       "id": "math_zh_v1-discount-5",
       "want": "225",
-      "got": "2250",
-      "correct": false,
+      "got": "225",
+      "correct": true,
       "missing": false
     },
     {
@@ -148,14 +148,14 @@
     {
       "id": "math_zh_v1-cowork-1",
       "want": "3",
-      "got": "3",
-      "correct": true,
+      "got": "50",
+      "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-cowork-2",
       "want": "4",
-      "got": "16",
+      "got": "5",
       "correct": false,
       "missing": false
     },
@@ -169,8 +169,8 @@
     {
       "id": "math_zh_v1-cowork-4",
       "want": "5",
-      "got": "5",
-      "correct": true,
+      "got": "20",
+      "correct": false,
       "missing": false
     },
     {
@@ -218,8 +218,8 @@
     {
       "id": "math_zh_v1-chicken_rabbit-1",
       "want": "3",
-      "got": "3",
-      "correct": true,
+      "got": "10",
+      "correct": false,
       "missing": false
     },
     {
@@ -232,56 +232,56 @@
     {
       "id": "math_zh_v1-chicken_rabbit-3",
       "want": "4",
-      "got": "9",
+      "got": "8",
       "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-chicken_rabbit-4",
       "want": "11",
-      "got": "11",
-      "correct": true,
+      "got": "24",
+      "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-chicken_rabbit-5",
       "want": "3",
-      "got": "8",
+      "got": "4",
       "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-fill_pool-1",
       "want": "6",
-      "got": "792",
+      "got": "26",
       "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-fill_pool-2",
       "want": "4",
-      "got": "1",
+      "got": "5",
       "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-fill_pool-3",
       "want": "8",
-      "got": "1.67",
+      "got": "9",
       "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-fill_pool-4",
       "want": "4",
-      "got": "5",
+      "got": "1.32",
       "correct": false,
       "missing": false
     },
     {
       "id": "math_zh_v1-fill_pool-5",
       "want": "3",
-      "got": "7",
+      "got": "0",
       "correct": false,
       "missing": false
     },
@@ -344,8 +344,8 @@
     {
       "id": "math_zh_v1-profit-4",
       "want": "10",
-      "got": "20",
-      "correct": false,
+      "got": "10",
+      "correct": true,
       "missing": false
     },
     {
@@ -365,7 +365,7 @@
     {
       "id": "math_zh_v1-arith_sum-2",
       "want": "104",
-      "got": "70",
+      "got": "96",
       "correct": false,
       "missing": false
     },
@@ -386,8 +386,8 @@
     {
       "id": "math_zh_v1-arith_sum-5",
       "want": "50",
-      "got": "50",
-      "correct": true,
+      "got": "40",
+      "correct": false,
       "missing": false
     },
     {
@@ -407,7 +407,7 @@
     {
       "id": "math_zh_v1-trees-3",
       "want": "18",
-      "got": "19",
+      "got": "179",
       "correct": false,
       "missing": false
     },
@@ -421,7 +421,7 @@
     {
       "id": "math_zh_v1-trees-5",
       "want": "23",
-      "got": "115",
+      "got": "24",
       "correct": false,
       "missing": false
     }
@@ -433,9 +433,9 @@
     "epochs": 2,
     "lr": 0.0002,
     "max_len": 320,
-    "seed": 42,
-    "train_seconds": 1500,
-    "eval_seconds": 229,
+    "seed": 43,
+    "train_seconds": 3408,
+    "eval_seconds": 332,
     "data": "experiments/m1_c1/results/arm2_llm_only/output.jsonl"
   }
 }
