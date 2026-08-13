@@ -1,0 +1,70 @@
+{
+  "dataset": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/corpus_raw.jsonl",
+  "steps_requested": [
+    {
+      "op": "whitespace_normalize"
+    },
+    {
+      "op": "exact_dedup"
+    },
+    {
+      "op": "llm_judge_filter",
+      "params": {
+        "criteria": "数学题目清晰、解答步骤正确、答案与推理一致",
+        "min_score": 4
+      }
+    }
+  ],
+  "steps_executed": [
+    "whitespace_normalize",
+    "exact_dedup",
+    "llm_judge_filter"
+  ],
+  "funnel_moves": [],
+  "n_in": 5000,
+  "n_out": 3887,
+  "retention": 0.7774,
+  "est_cost_total": 71.0585,
+  "per_op": [
+    {
+      "op": "whitespace_normalize",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 5000,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.015,
+      "est_cost": 0.001
+    },
+    {
+      "op": "exact_dedup",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 4737,
+      "killed": 263,
+      "retention": 0.9474,
+      "seconds": 0.02,
+      "est_cost": 0.0025
+    },
+    {
+      "op": "llm_judge_filter",
+      "params": {
+        "criteria": "数学题目清晰、解答步骤正确、答案与推理一致",
+        "min_score": 4
+      },
+      "cost_tier": "llm",
+      "in": 4737,
+      "out": 3887,
+      "killed": 850,
+      "retention": 0.8206,
+      "seconds": 5352.519,
+      "est_cost": 71.055
+    }
+  ],
+  "output": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/results/arm2_llm_only/output.jsonl",
+  "rejects": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/results/arm2_llm_only/rejects.jsonl",
+  "judge_labels": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/results/arm2_llm_only/judge_labels.jsonl",
+  "judge_labels_count": 4737
+}
