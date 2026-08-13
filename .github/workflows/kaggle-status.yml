@@ -17,6 +17,20 @@ jobs:
     timeout-minutes: 8
     steps:
       - run: pip install --quiet kaggle
+      - name: Probe accelerator 枚举(kaggle 包源码)
+        run: |
+          python - <<'PYEOF'
+          import kaggle, pathlib, re
+          root = pathlib.Path(kaggle.__file__).parent
+          hits = set()
+          for f in root.rglob("*.py"):
+              txt = f.read_text(errors="ignore")
+              for m in re.finditer(r"nvidia[A-Za-z0-9]*|accelerator[\"']?\s*[:=]", txt):
+                  line = txt[max(0,m.start()-80):m.end()+120].replace("\n"," ")
+                  hits.add(line.strip()[:200])
+          for h in sorted(hits)[:40]:
+              print("HIT:", h)
+          PYEOF
       - name: Status + try output
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
