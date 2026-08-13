@@ -1,0 +1,36 @@
+# Kaggle kernel 状态探针:查任意 kernel 的真实状态,完成则顺带取输出。
+# 用于 kaggle-7b 长跑期间的可见性(Actions 轮询只看字符串,此处直接落状态与日志)。
+
+name: kaggle-status
+
+on:
+  workflow_dispatch:
+    inputs:
+      slug:
+        description: "kernel slug(不含用户名)"
+        default: "df-7b-arm4a-funnel-verify-s42"
+        required: true
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - run: pip install --quiet kaggle
+      - name: Status + try output
+        env:
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
+        run: |
+          echo "===== status ====="
+          kaggle kernels status "s4526291/${{ inputs.slug }}" || true
+          echo "===== kernels list (mine, recent) ====="
+          kaggle kernels list --mine --page-size 5 || true
+          echo "===== try output (only works when complete/error) ====="
+          if kaggle kernels output "s4526291/${{ inputs.slug }}" -p out 2>/dev/null; then
+            echo "--- eval_report.json ---"
+            cat out/eval_report.json 2>/dev/null || echo "(无 eval_report.json)"
+            echo "--- log tail ---"
+            tail -40 out/*.log 2>/dev/null || true
+          else
+            echo "(输出尚不可取,kernel 未结束)"
+          fi
