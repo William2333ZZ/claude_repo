@@ -1,0 +1,71 @@
+# [M1-C1c] 免费算力实验:GitHub Actions CPU 跑器(公开仓库免费,4核+完整外网)
+# 每个 arm 一个并行 job:重放数据产线 -> 0.5B LoRA CPU 训练 -> 贪心评测 -> 传工件。
+# 另含 baseline job:未训练基座的评测对照。
+
+name: experiment-cpu
+
+on:
+  workflow_dispatch:
+    inputs:
+      arms:
+        description: "逗号分隔的组名"
+        default: "arm1_heuristic,arm3_scorer,arm4a_funnel_verify"
+        required: true
+
+jobs:
+  train-eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        arm: [arm1_heuristic, arm3_scorer, arm4a_funnel_verify]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps (CPU torch)
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet "transformers>=4.44" "peft>=0.12" accelerate
+          pip install --quiet -e .
+      - name: Replay pipeline (deterministic)
+        run: |
+          python experiments/m1_c1/generate_corpus.py
+          python experiments/m1_c1/run_arm.py --arm ${{ matrix.arm }}
+      - name: Train + eval (0.5B LoRA, CPU)
+        run: |
+          python scripts/train_cpu_proxy.py \
+            --data experiments/m1_c1/results/${{ matrix.arm }}/output.jsonl \
+            --out experiments/m1_c1/results/${{ matrix.arm }}_cpu
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.arm }}
+          path: |
+            experiments/m1_c1/results/${{ matrix.arm }}_cpu/eval_report.json
+            experiments/m1_c1/results/${{ matrix.arm }}_cpu/generations.jsonl
+            experiments/m1_c1/results/${{ matrix.arm }}/analysis.json
+
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps (CPU torch)
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet "transformers>=4.44" "peft>=0.12" accelerate
+          pip install --quiet -e .
+      - name: Eval untrained base model
+        run: |
+          python scripts/train_cpu_proxy.py --skip-train \
+            --data evalsets/math_zh_v1.jsonl \
+            --out experiments/m1_c1/results/baseline_cpu
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result-baseline
+          path: experiments/m1_c1/results/baseline_cpu/eval_report.json
