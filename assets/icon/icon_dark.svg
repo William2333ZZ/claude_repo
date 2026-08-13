@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="drop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9775FA"/>
+      <stop offset="1" stop-color="#6741D9"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#9775FA" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#9775FA" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect x="0" y="0" width="1024" height="1024" rx="180" fill="#1B2430"/>
+  <!-- 杂乱数据(异构形状,灰) -->
+  <g fill="#8A94A6">
+    <rect x="330" y="168" width="52" height="52" rx="10" transform="rotate(-14 356 194)"/>
+    <circle cx="516" cy="152" r="27"/>
+    <path d="M 668 150 L 700 206 L 636 206 Z"/>
+    <rect x="586" y="228" width="34" height="34" rx="8" transform="rotate(18 603 245)" opacity="0.75"/>
+    <circle cx="416" cy="242" r="17" opacity="0.75"/>
+  </g>
+  <!-- 漏斗 -->
+  <path d="M 268 316 L 756 316 L 546 574 L 546 668 L 478 668 L 478 574 Z"
+        fill="#FFFFFF" stroke="#FFFFFF" stroke-width="26" stroke-linejoin="round"/>
+  <!-- 精炼产出:紫色水滴 -->
+  <circle cx="512" cy="812" r="150" fill="url(#glow)"/>
+  <path d="M 512 726 C 542 766 574 800 574 836 A 62 62 0 1 1 450 836 C 450 800 482 766 512 726 Z"
+        fill="url(#drop)"/>
+  <circle cx="537" cy="843" r="13" fill="#FFFFFF" opacity="0.85"/>
+</svg>
