@@ -1,0 +1,127 @@
+{"text": "问:Sandbox 在 ICML 2025 的 Spotlight 录用中排名前多少百分比？\n答:Sandbox 是 ICML 2025 Spotlight，前 2.6%。", "score": 1, "reason": "信息量极少，无事实细节支撑"}
+{"text": "问:DataFlow-Harness 在 2026 年发布时，其 WebUI 包含哪些核心组件？\n答:DataFlow-Harness 的 WebUI 包含四个核心组件：Skills 层（算子选择的过程性知识）、MCP Server（暴露算子注册表）、外部编码代理（Claude Code、Codex、Cursor）生成 DataFlow Python 代码，以及 DAG 画布可视化编辑。", "score": 1, "reason": "虚构未来产品，事实不可查证"}
+{"text": "问:DataFoundry 明确不服务哪两类用户？\n答:DataFoundry 明确不服务两类用户：一是头部实验室，因为他们自建数据管线且视其为内部核心机密；二是纯数据标注工具需求方，因为这是 Label Studio 的地盘。", "score": 1, "reason": "问题涉及特定产品，信息不通用且疑似广告"}
+{"text": "问:在 6 个月里程碑中，多模态试点的具体内容是什么？\n答:多模态试点的具体内容是：DJ 视频算子 + Curator GPU 去重合一条视频数据产线，目的是蹭 DJ-SORA 的势能。", "score": 1, "reason": "内容模糊且疑似营销，缺乏事实细节"}
+{"text": "问:材料中提到的“纪律：任何零件两周内可替换”具体针对哪一类组件？\n答:零件。材料在“零件”一栏中说明其特点是“浅依赖，可替换”，并列举了MinerU、Presidio、公开打分器权重等，随后给出了纪律“任何零件两周内可替换”。", "score": 1, "reason": "问题与材料无关，回答空泛无信息量"}
+{"text": "问:根据材料，Agent 使用 MCP 工具时会自然形成怎样的循环？\n答:估成本 → 跑漏斗 → 看死因 → 调参 的循环。这是因为工具描述里内嵌了「先估后跑」的引导。", "score": 1, "reason": "回答无依据，虚构信息，事实不清。"}
+{"text": "问:2025 年 NVIDIA 将 NeMo 单体仓库拆分成了什么组织，包含大约多少个仓库？\n答:2025 年 NVIDIA 将 `NVIDIA/NeMo` 单体仓库拆成了 NVIDIA-NeMo GitHub 组织，约包含 28 个仓库。", "score": 5, "reason": "事实清晰具体，信息量足，无广告"}
+{"text": "问:NeMo Framework 2.0 在配置方式上相比 1.0 有什么变化？它训练建立在哪些组件之上？\n答:NeMo Framework 2.0 抛弃了 1.0 的 YAML/Hydra 配置，改为 Python 优先配置（Fiddle）。训练建立在 Megatron-Core（张量/流水线/上下文并行）和 Transformer Engine（FP8）之上，并按月发布 NGC 容器（如 25.11）。", "score": 5, "reason": "事实清晰具体，信息量足，无广告内容。"}
+{"text": "问:Megatron-Bridge 的核心能力是什么？它支持哪些微调方法？\n答:Megatron-Bridge 的核心能力是提供 PyTorch 原生训练循环，并通过 AutoBridge 实现 HF ↔ Megatron 检查点的双向在线转换，支持 30+ 模型家族。它支持的微调方法包括 LoRA 和 DoRA，是 NeMo 2.0 LLM 路线的继任者。", "score": 4, "reason": "事实清晰，信息量足，但未提具体细节，略偏宣传。"}
+{"text": "问:NeMo-Aligner 于何时归档弃用，其继任者是什么？\n答:NeMo-Aligner 于 2025-05 归档弃用，继任者是 NeMo RL。", "score": 5, "reason": "事实清晰，时间与继任者明确，信息量足。"}
+{"text": "问:NeMo RL 使用哪些编排和生成后端？\n答:NeMo RL 使用 Ray 编排，vLLM 或 Megatron 作为生成后端。", "score": 5, "reason": "事实清晰准确，信息量足，无冗余。"}
+{"text": "问:NeMo Curator 的仓库名称和许可证是什么？\n答:NeMo Curator 的仓库是 NVIDIA-NeMo/Curator，许可证为 Apache-2.0。", "score": 5, "reason": "事实准确清晰，信息量足，无冗余内容。"}
+{"text": "问:去重三件套分别是什么？它们分别采用什么技术？\n答:去重三件套包括精确去重（采用MD5）、模糊去重（采用MinHash+LSH）和语义去重（采用嵌入聚类）。全部经RAPIDS（cuDF/cuML/cuGraph）GPU加速。", "score": 4, "reason": "事实清晰，信息量足，但略含推广成分。"}
+{"text": "问:26.02版本中，所有模态统一到哪个流水线上？生产默认执行器是什么？\n答:26.02版本把所有模态统一到Ray流水线上，生产默认执行器为XennaExecutor（Cosmos-Xenna）。", "score": 5, "reason": "事实明确，信息量足，无冗余内容。"}
+{"text": "问:在训练数据入口中，预训练阶段期望的输入格式是什么？经过什么脚本处理后输出什么格式？\n答:预训练阶段期望输入格式为JSONL，经过preprocess_data_for_megatron.py脚本处理后，输出内存映射的.bin/.idx文件，并可通过blend或blend_per_split按权重混合多语料。", "score": 5, "reason": "事实清晰，信息量足，无冗余内容。"}
+{"text": "问:NVIDIA 的开源仓库中，哪些库采用了 Apache-2.0 许可证？\n答:开源仓库（NeMo、Curator、RL、Megatron-Bridge、Automodel、Run、Evaluator 库、Guardrails、Megatron-LM）均为 Apache-2.0。", "score": 5, "reason": "事实清晰，列举具体，信息量足，无广告"}
+{"text": "问:NVIDIA 微服务控制面（Customizer/Data Store/Entity Store、Retriever NIM）在生产环境使用需要什么条件？\n答:开发免费，生产需 NVIDIA AI Enterprise 订阅。", "score": 4, "reason": "事实清晰，信息量适中，但略简略"}
+{"text": "问:根据材料，NVIDIA 的短板中提到的“API 变动剧烈”具体指哪些变化？\n答:1.0→2.0（Hydra→Fiddle）、单体→拆库、Curator Dask→Ray 重写。", "score": 5, "reason": "事实清晰，信息量足，直接回答无冗余。"}
+{"text": "问:阿里通义实验室开源的 data-juicer 项目迁移到了哪个 GitHub 组织？同组织下还有哪些相关仓库？\n答:data-juicer 项目已从 modelscope/data-juicer 迁至独立的 datajuicer GitHub 组织，旧地址会重定向。同组织下还有 data-juicer-sandbox、data-juicer-agents、data-juicer-hub（社区配方库）。", "score": 5, "reason": "事实清晰具体，信息量足，无广告内容。"}
+{"text": "问:Data-Juicer 的自我定位从「一站式数据处理系统」升级成了什么？它获得了哪些学术荣誉？\n答:自我定位从「一站式数据处理系统」升级为「基础模型时代的数据操作系统」。学术荣誉方面，系统论文发表于 SIGMOD 2024，Data-Juicer 2.0 为 NeurIPS 2025 Datasets & Benchmarks Spotlight（前 3.1%）。", "score": 5, "reason": "事实清晰，信息量足，无广告，完全符合标准。"}
+{"text": "问:Data-Juicer 的算子库包含多少种算子，分为哪几大类？请分别列出各类的数量。\n答:算子库共 230 个 OP，分为 8 大类：Mapper 138 个、Filter 58 个、Deduplicator 10 个、Formatter 8 个、Selector 6 个、Aggregator 4 个、Grouper 3 个、Pipeline 3 个（如 llm_inference_with_ray_vllm_pipeline）。", "score": 5, "reason": "事实清晰，数据具体，分类明确，信息量足。"}
+{"text": "问:v1.5.5 起，第三方扩展点通过什么方式打开？\n答:v1.5.5 起支持 pip 安装的外部算子插件，第三方扩展点由此打开。", "score": 3, "reason": "信息基本准确但较简略，未展开细节。"}
+{"text": "问:DJ-SORA 在材料中的定位是什么？\n答:DJ-SORA 是构建 Sora 级视频训练数据的可复用配方套件。", "score": 5, "reason": "定义清晰准确，信息量足，无冗余。"}
+{"text": "问:材料中给出的 MinHash RayDeduplicator 公开性能口径是什么？\n答:MinHash RayDeduplicator 处理 5TB 数据、使用 1,280 核、耗时 2.8 小时，靠负载均衡 BTS union-find 与哈希聚合比原生 Ray 快 2–3.3 倍。", "score": 5, "reason": "事实清晰，数据具体，信息量足，无广告"}
+{"text": "问:EasyAnimate 通过 Sandbox 在 VBench 文生视频榜上取得了什么成绩？\n答:EasyAnimate 通过 Sandbox 登顶 VBench 文生视频榜，图文任务平均提升 +7.13%（涉及 TextVQA、MMBench、MME 等任务）。", "score": 4, "reason": "事实清晰，信息量足，但未提具体榜单细节。"}
+{"text": "问:data-juicer-agents 中 InteRecipe 的功能是什么？\n答:InteRecipe 是 data-juicer-agents 中的一个组件，用于自然语言交互式配方构建。", "score": 4, "reason": "事实清晰，信息量适中，无广告，但略简略。"}
+{"text": "问:DataFlow 项目由哪个机构主导？其 GitHub 星标数、开源许可证、PyPI 包名和首次公开发布时间分别是什么？\n答:DataFlow 由北大 Wentao Zhang 组（PKU-DCAI）主导，贡献者来自港科大、中科院、上海 AI Lab、百川、蚂蚁。其 GitHub 星标数约 7.3k，开源许可证为 Apache-2.0，PyPI 包名为 open-dataflow，首次公开发布时间为 2025-06。", "score": 5, "reason": "事实清晰具体，信息量足，无广告水文。"}
+{"text": "问:DataFlow 在推理数据合成方面取得了哪些具体赛事成绩？\n答:DataFlow 在推理数据合成方面获得 ICML 2025 自动数学推理挑战赛 Track 2 冠军，以及 BAAI 2025 语言与智能挑战赛冠军。", "score": 4, "reason": "事实具体清晰，信息量足，但缺乏细节支撑。"}
+{"text": "问:材料中提到的 230 个算子大盘子主要由哪两类算子构成？LLM 算子（如 llm_condition_filter）落地时间受什么因素制约？\n答:230 个算子大盘子主要由统计/启发式算子（如困惑度、比率、simhash/minhash）和 LLM 算子（如 llm_condition_filter、语义抽取框架）构成。LLM 算子 2025–26 才落地，受 API/GPU 成本约束。", "score": 4, "reason": "事实清晰，信息量足，但略简略无细节支撑。"}
+{"text": "问:Operator 注册进哪个注册表？当前有多少个算子、分为几类？\n答:Operator 注册进 OPERATOR_REGISTRY，当前约有 197 个算子，分为 14 类。", "score": 4, "reason": "事实清晰，信息量足，但未说明分类依据。"}
+{"text": "问:Pipeline 的代码风格是怎样的？它使用 YAML DSL 吗？\n答:Pipeline 是纯 Python、刻意采用 PyTorch 风格：在 __init__ 里实例化算子并注入 llm_serving 与 prompt 模板，forward() 顺序执行，compile() 做跨算子的键匹配静态校验。它不使用 YAML DSL。", "score": 5, "reason": "事实清晰，信息量足，无广告，直接回答核心问题。"}
+{"text": "问:知识库清洗（KBC）流水线的主要处理步骤是什么？\n答:知识库清洗（KBC）流水线的主要步骤是：文件/URL 转换为 Markdown（含 MinerU 式解析），然后进行分块、清洗，最后生成多跳 QA 数据。", "score": 4, "reason": "步骤清晰但细节略少，信息量尚可"}
+{"text": "问:pdf2model_pipeline 和 text2model_pipeline 这两个命令在材料中被称为什么的雏形？\n答:这两个命令被称为「垂直切片产品」的雏形。", "score": 3, "reason": "事实明确但信息量少，仅回答名称无扩展。"}
+{"text": "问:DataFlow-MM 仓库的主要特点是什么？\n答:DataFlow-MM 是一个独立的多模态仓库，目前约有 49 个 stars，尚不成熟。", "score": 3, "reason": "信息量少，未详述特点，仅提stars数。"}
+{"text": "问:在 LLM 算子与后端中，经典算子主要集中在哪个模块？该模块包含多少个算子？请列举其中三种经典算子。\n答:经典算子主要集中在 general_text 模块，该模块包含 62 个算子。其中三种经典算子包括 MinHash/SimHash/CCNet 去重、启发式过滤、Presidio PII。", "score": 5, "reason": "事实清晰具体，信息量足，无广告。"}
+{"text": "问:LLMServingABC 支持多少种实现？请列举其中三种。\n答:LLMServingABC 支持 13 种实现。其中三种包括 OpenAI 兼容 API、LiteLLM 多供应商、vLLM 本地服务。", "score": 4, "reason": "事实清晰，信息量足，但未深入细节。"}
+{"text": "问:DataFlow-Agent 的技术报告中的处理流程是什么？\n答:DataFlow-Agent 的技术报告中的处理流程是：自然语言 → 数据分析 → 流水线规划 → 算子推荐/合成新算子 → 迭代验证调试。", "score": 4, "reason": "流程清晰准确，信息量足，但略简略。"}
+{"text": "问:DataFlow 在规模维度上的短板具体体现在哪些方面？\n答:DataFlow 在规模维度上的短板是：采用单节点 pandas 和每步本地文件缓存，其 rayorch 只是约 370 行的实验性 Ray actor 封装，导致其分布式能力与 DJ（Data-Juicer）相比差一个代际。", "score": 5, "reason": "事实清晰具体，对比明确，信息量足，无广告。"}
+{"text": "问:根据材料，三个算子形态分别是什么？\n答:三个算子形态分别是：启发式+分类器（GPU 加速，230 个，统计/启发式为主）、YAML 配方（~197 个，LLM 语义为主）和 Python（PyTorch 风格）。", "score": 5, "reason": "事实清晰，信息量足，无冗余。"}
+{"text": "问:在数据合成方面，哪个项目最强？\n答:在数据合成方面，多阶段领域流水线最强，归属于第三个项目（Python/PyTorch 风格），而第一个项目是 DataDesigner（闭源倾向），第二个项目是单调用级 mapper。", "score": 3, "reason": "信息较具体但缺乏对比依据，表述略模糊"}
+{"text": "问:材料中提到的两个开源项目（DJ、DataFlow）在整合时是否需要 fork 任何一方？\n答:不需要。材料指出两个开源项目（DJ、DataFlow）都已暴露 MCP 与插件机制，整合不需要 fork 任何一方，胶水可以全部长在外面。", "score": 4, "reason": "事实清晰，信息量足，但略简略。"}
+{"text": "问:NeMo Framework User Guide 25.11 的文档链接是什么？\n答:https://docs.nvidia.com/nemo-framework/user-guide/25.11/index.html", "score": 5, "reason": "事实清晰，直接给出准确链接，信息量足。"}
+{"text": "问:NVIDIA-NeMo 组织在 GitHub 上拥有哪些主要仓库？\n答:NVIDIA-NeMo 组织在 GitHub 上拥有 Curator、NeMo RL 和 Megatron-Bridge 等主要仓库。", "score": 4, "reason": "事实清晰，信息量适中，但未展开细节。"}
+{"text": "问:NeMo 微服务文档对应的版本号是多少？\n答:NeMo 微服务文档对应的版本号是 25.7.0。", "score": 3, "reason": "信息准确但过于简单，缺乏上下文和细节。"}
+{"text": "问:Data-Juicer 的 GitHub 仓库地址是什么？\n答:Data-Juicer 的 GitHub 仓库地址是 https://github.com/datajuicer/data-juicer。", "score": 5, "reason": "事实清晰准确，信息量足，无广告"}
+{"text": "问:DataFlow 的技术报告 arXiv 编号是多少？\n答:DataFlow 的技术报告 arXiv 编号是 2512.16676，对应链接为 https://arxiv.org/abs/2512.16676。", "score": 5, "reason": "事实清晰，信息准确完整，无冗余广告。"}
+{"text": "问:Data-Juicer 的 Sandbox 论文发表于哪个会议？\n答:Data-Juicer 的 Sandbox 论文发表于 ICML'25，对应链接为 https://arxiv.org/abs/2407.11784。", "score": 5, "reason": "事实清晰准确，信息量足，无广告内容。"}
+{"text": "问:DataFoundry 平台在系统层级中定位为哪一层？它向下和向上分别对接什么？\n答:DataFoundry 定位为「第四层」，即数据精炼与反馈操作系统。它向下把 Data-Juicer、DataFlow、NeMo 当作可调度的执行引擎；向上给用户一个以「配方」为中心的闭环工作台，支持描述数据目标、自动编排混合流水线、训练评测、归因回流、配方进化。", "score": 5, "reason": "事实清晰，定位明确，上下对接具体，信息量足。"}
+{"text": "问:垂直模型团队（金融/法律/医疗/制造，10–100人）的核心痛点是什么？为什么他们被列为优先级最高的目标用户？\n答:垂直模型团队的核心痛点是：从「一堆 PDF 和业务库」到「能训练的高质量 SFT/RL 数据」之间没有现成产品，全靠手搓脚本。他们被列为优先级最高的目标用户，是因为有私域数据、有 GPU 预算、没有数据基建团队，且付费意愿最强，因此被作为设计锚点。", "score": 5, "reason": "痛点清晰，用户优先级论证充分，信息密度高。"}
+{"text": "问:第五层 Agent 工作台包含哪两个组件？\n答:第五层 Agent 工作台包含 Data Engineer Agent（支持 NL→配方，复用 DJ/DataFlow 双 MCP）和配方中心 Recipe Hub（包含社区配方 + 效果档案）。", "score": 4, "reason": "事实清晰，信息量足，但略偏技术细节。"}
+{"text": "问:第四层闭环控制面作为核心资产，具体包含哪三个组件？\n答:第四层闭环控制面包含：配方注册表与版本化、归因引擎（数据切片 ↔ 评测增益）、成本感知编译器（漏斗排序）。", "score": 5, "reason": "事实清晰，组件明确，信息量足，无冗余。"}
+{"text": "问:第二层执行引擎适配器中的三个 Adapter 分别是什么？\n答:第二层执行引擎适配器包含：DJ Adapter（YAML 配方生成/执行）、DataFlow Adapter（算子包装为 Ray UDF）、NeMo Adapter（Curator·格式出口·NeMo-Run·Evaluator）。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:在统一样本模式中，每条样本需要携带哪些字段？\n答:每条样本携带 sample_id、源指纹、模态载荷、统计特征（DJ Analyzer 产出）、语义标注（DataFlow judge 产出）以及 op_trace，其中 op_trace 记录哪个算子在哪个版本用什么参数动过或杀过该样本。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:三个上游项目（DJ、DataFlow、NeMo）分别通过什么方式接入整合层？\n答:DJ 走它的 YAML/REST/MCP 接口；DataFlow 的算子被包成 Ray map_batches UDF（因为它的 Operator 是普通 Python 类，天然可包）；NeMo 走 Curator API + 格式导出 + NeMo-Run 提交。", "score": 5, "reason": "事实清晰具体，信息量足，无广告水文。"}
+{"text": "问:为什么说 op_trace 是全平台最重要的一列？\n答:因为如果没有 op_trace，第 4 层的归因引擎就无从谈起；它直接补上三方共同的空白（NeMo Data Store 只是文件桶，DJ/DataFlow 都无血缘）。", "score": 4, "reason": "事实清晰，信息量足，但略偏技术表述。"}
+{"text": "问:在楔子 2 中，整合层可以只面向哪种执行引擎编程，依据是什么？\n答:整合层可以只面向 Ray 一种执行引擎编程。依据是：DJ 原生 Ray、NeMo Curator 26.02 全面 Ray 化（Xenna）、NeMo RL 用 Ray、DataFlow 有 rayorch 雏形。", "score": 4, "reason": "事实清晰，信息量足，但未展开细节。"}
+{"text": "问:在成本感知的漏斗编译器中，数据算子成本分为哪三档？每档对应什么量级成本？\n答:数据算子成本分为三档：启发式/统计（CPU）成本约为分/GB，小模型打分（GPU）成本约为元/GB，LLM 判审/合成（API 或大模型推理）成本约为元/千样本。", "score": 5, "reason": "事实清晰，分档明确，量级具体，信息量足。"}
+{"text": "问:成本感知的漏斗编译器如何对算子进行重排？它依据什么标准？\n答:编译器按「单位样本成本 × 预期淘汰率」自动重排算子，即先运行便宜且淘汰率高的算子（如启发式/统计），让昂贵的 LLM 算子只处理幸存样本，从而避免 LLM 算子看到全量数据导致成本爆炸。", "score": 5, "reason": "事实清晰，信息量足，无广告，专业准确。"}
+{"text": "问:训练-评测回路中，精炼结果可以导出为哪些格式？\n答:可以导出为 NeMo 四种格式（bin/idx、SFT JSONL、OpenAI messages、DPO preference），同时支持 LLaMA-Factory/HF TRL 格式以保持训练器中立。", "score": 5, "reason": "事实清晰，信息量足，无广告，格式明确。"}
+{"text": "问:在材料中，数据标注员提到的提交和归因流程具体包括哪些内容？\n答:提交流程是经 NeMo-Run 把微调或强化学习任务发到 Slurm 或 K8s 集群，然后经 NeMo Evaluator（或 One-Eval/自建基准）拿回评测结果。归因流程是将「配方版本 → 数据切片 → 评测增益」三元组落库，方法上从粗到细依次为：消融（切片剔除重训小代理模型，即 DJ Sandbox 的 Probe 思路工业化）、influence function 近似、DataFlex 式训练时动态选数（远期内循环）。", "score": 5, "reason": "事实清晰，流程具体，信息量足，无广告。"}
+{"text": "问:材料中提到的“数据网络效应”具体指什么？为什么被称为长期护城河？\n答:数据网络效应指每一次客户运行都在给平台积累「什么数据在什么任务上有效」的证据库。这个证据库随着运行次数增加而不断丰富，使得平台对数据与任务匹配关系的理解越来越精准，从而能提供更优的配方和归因，吸引更多客户使用，形成正向循环。因此它被称为真正的长期护城河。", "score": 5, "reason": "定义清晰，机制完整，解释护城河逻辑，信息量足。"}
+{"text": "问:在Agent工作台部分，产品要做的核心是什么？Agent的知识来源有哪些？\n答:产品要做的核心不是自研规划器，而是把两家的 MCP 工具（DJ 的 MCP 与 InteRecipe，以及 DataFlow-Harness 的 MCP）和本平台的编排/归因工具汇聚成一个 Agent 环境（Claude Code 或任意编码代理都能驱动）。Agent 的知识来自配方中心，包括 DJ-Hub 配方、DataFlow 流水线、平台归因档案，这些都会变成 Agent 的可检索技能。", "score": 4, "reason": "事实清晰，信息量足，但表述略专业，无广告。"}
+{"text": "问:根据材料，HF 生态（distilabel/Argilla/Datatrove）在数据标注和清洗方面存在哪些不足？\n答:HF 生态的不足是：各管一段、无规模化编排、无训练闭环；可作为被集成对象而非对手。", "score": 3, "reason": "信息量一般，未具体展开不足细节"}
+{"text": "问:材料中提到的商业模式中，开源部分（Apache-2.0）包括哪些具体内容？\n答:开源部分（Apache-2.0）包括：适配器层、统一模式、血缘、基础编排——目的是建生态位，成为「三方之间的默认胶水」。", "score": 4, "reason": "事实清晰，信息量足，但略简略，未展开细节。"}
+{"text": "问:材料中提到的定价锚是什么？平台年费定在什么区间能带来明确的 ROI 故事？\n答:定价锚是：客户请一个数据工程师 60–100 万/年，平台年费定在 20–40 万区间即有明确 ROI 故事；省下的 LLM 判审成本可单独量化进报价。", "score": 4, "reason": "事实清晰，信息量足，但略简略无展开。"}
+{"text": "问:90天MVP切片选择中，选择「企业私域文档 → 推理增强的 SFT/DPO 数据 → 7B 微调 → 评测报告 → 配方迭代」的理由是什么？\n答:理由有三点：一是需求最普遍，每个垂直团队都有一堆PDF；二是DataFlow的KBC+reasoning流水线和pdf2model已经给了70%的语义件；三是DJ补规模清洗，NeMo补训练评测，三方能力各用其长，且结果可量化（评测分数）。", "score": 5, "reason": "事实清晰，理由具体，信息量足，无广告"}
+{"text": "问:90天MVP的流程图中，从文档解析到归因报告，依次经过哪些阶段？\n答:依次经过：1. 文档解析与清洗（DataFlow KBC:PDF→MD→分块）；2. 规模层去重过滤（DJ on Ray:MinHash·启发式·PII）；3. 语义精炼（DataFlow:多跳QA·CoT合成·LLM judge）；4. 出口（SFT JSONL + DPO preference）；5. 微调（NeMo Automodel LoRA 7B）；6. 评测（NeMo Evaluator + 领域自建集）；7. 归因报告（切片消融 → 配方 v2），之后反馈回第2步。", "score": 5, "reason": "流程清晰，技术细节丰富，信息量足，无广告。"}
+{"text": "问:90天MVP的前6周（第1-6周）分别交付什么内容？\n答:第1-3周交付：统一样本模式v0（Arrow）+ op_trace血缘；DataFlow算子→Ray map_batches包装器（先覆盖KBC/reasoning用到的约15个算子）。第4-6周交付：DJ适配器（生成YAML配方并经其REST/CLI执行）；NeMo格式出口四件套；端到端手动串通第一次。", "score": 5, "reason": "事实清晰具体，信息量足，无广告水文。"}
+{"text": "问:在 MVP 的可信度实验中，需要对比哪四条产线的下游评测？\n答:需要对比的四条产线是：1. 仅 DJ 默认配方；2. 仅 DataFlow 默认流水线（单机，能处理多少算多少）；3. FineWeb-Edu 风格基线；4. 本平台混合漏斗产线。", "score": 5, "reason": "事实清晰，信息量足，直接回答无冗余。"}
+{"text": "问:MVP 可信度实验的判定标准是什么？如果本平台混合漏斗产线不满足该标准，结论是什么？\n答:判定标准是：本平台混合漏斗产线必须在「同成本更高分」或「同分数更低成本」上稳定赢过其他三条产线。如果不满足，就不存在这个产品，这是最便宜的证伪点。", "score": 5, "reason": "事实清晰，判定标准明确，结论直接，信息量足。"}
+{"text": "问:DataFlex 式训练时选数在什么条件下才会被纳入？\n答:DataFlex 式训练时选数需要客户真实拉动才做，因为它技术上性感但侵入训练循环、维护面大。", "score": 3, "reason": "信息量一般，术语解释不足，缺乏具体条件细节。"}
+{"text": "问:针对上游 API 剧变风险，材料中提出的对策是什么？\n答:对策是采用适配器薄层加版本 pin 的「已验证组合」发布（类似 NGC 容器月度节奏），并且绝不深入 fork。", "score": 4, "reason": "事实清晰，信息量足，但略简略，未展开细节。"}
+{"text": "问:在应对 NVIDIA 生态封闭化风险时，训练/评测层采取的双栈策略具体指什么？\n答:训练/评测层保持双栈，即在 NeMo 之外始终支持 LLaMA-Factory/TRL/vLLM 开源路径。", "score": 4, "reason": "事实清晰，信息量足，但未展开细节。"}
+{"text": "问:根据材料，北极星指标是什么？\n答:北极星指标是「每美元数据成本带来的下游评测增益」（gain-per-dollar），同时约束「有效」与「便宜」。", "score": 5, "reason": "定义清晰准确，信息量足，无冗余。"}
+{"text": "问:材料中提到的护栏指标是什么？超过多少比例说明整合策略出了问题？\n答:护栏指标是上游适配器的维护耗时占比，超过30%说明整合策略出了问题。", "score": 5, "reason": "事实清晰，信息量足，无广告，直接回答"}
+{"text": "问:在材料附的「本周末就能做的事」中，最小归因实验的步骤是什么？\n答:步骤是：1. 装 open-dataflow，用 KBC 流水线把 50 个 PDF 打成分块 QA（API 模式）；2. 装 py-data-juicer，写 10 行 YAML 做去重+启发式过滤，对比前后样本量与质量；3. 用 LLaMA-Factory LoRA 微调一个 7B，自建 50 题领域评测集打分；4. 把「过滤强度」调两档重跑，看分数是否移动——这就是最小的归因实验。", "score": 4, "reason": "步骤清晰具体，信息量足，但依赖材料上下文，独立性稍弱。"}
+{"text": "问:根据材料，依赖闭源组件的红线具体指什么？\n答:依赖的红线是闭源组件，不是库本身。具体包括：NIM 容器、NeMo 微服务控制面 Customizer/Data Store/Entity Store，以及任何需要 NVIDIA AI Enterprise 订阅的东西，这些一概不用。", "score": 5, "reason": "事实清晰，信息具体，无广告，回答准确。"}
+{"text": "问:材料中提到的三个开源库（Data-Juicer、DataFlow、NeMo 开源仓库）分别是什么许可证？\n答:Data-Juicer、DataFlow 和 NeMo 的开源仓库（包括 Curator/RL/Megatron-Bridge）都是 Apache-2.0 许可证，git 下来可以直接使用。", "score": 5, "reason": "事实清晰准确，信息量足，无广告内容。"}
+{"text": "问:在“卖平台/工具”这一产品形态下，对库的依赖结论是什么？\n答:在卖平台/工具（让别人用你的软件生产数据）的形态下，客户能看到库（兼容生态是卖点），依赖是合理的，但只做薄适配（对应 02 的方案）。", "score": 4, "reason": "结论清晰，信息量足，但略简略"}
+{"text": "问:材料中针对闭源件给出了哪些开源替代方案？\n答:闭源件的开源替代方案包括：推理用 vLLM/SGLang 替代 NIM；数据存储自建（平台 v0.1 已实现）替代 NeMo Data Store；训练用开源 NeMo 仓库或 LLaMA-Factory 替代 Customizer。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:根据材料，质量的生产函数由哪五个环节相乘组成？\n答:质量 = 源(sourcing) × 变换(transform) × 判别(discriminate) × 验证(verify) × 反馈(feedback)", "score": 5, "reason": "事实清晰，信息量足，无冗余内容。"}
+{"text": "问:材料中提到的FineWeb-Edu的核心结论是什么？\n答:小分类器选出的好源打赢更大的未过滤语料，说明质量首先是选出来的，不是加工出来的。", "score": 5, "reason": "结论清晰准确，信息量足，无冗余。"}
+{"text": "问:在变换环节中，哪些操作是创造质量的，哪些只是防止质量损失？\n答:创造质量的变换是改写（raw web → 教科书体，Nemotron-CC 路线）与合成；去重清洗是地板不是天花板，只防止质量损失，不创造质量。", "score": 5, "reason": "事实清晰，对比明确，信息量足，无广告。"}
+{"text": "问:根据材料，可验证域的质量公式是什么？\n答:质量 = 生成多样性 × 验证器严格度。生成是便宜的，验证器才是护城河。", "score": 3, "reason": "信息量不足，缺乏具体公式细节和来源"}
+{"text": "问:材料中提到的三个库主要覆盖了五个环节中的哪些部分？\n答:三个库主要覆盖「变换」和半个「判别」，即五个环节里最商品化、最可替换的部分。", "score": 3, "reason": "信息量一般，未明确具体库名及环节细节，事实不够清晰。"}
+{"text": "问:在不可验证域（写作、对话、领域知识）中，质量的天花板由什么决定？\n答:质量的天花板 = 教师能力。同时存在蒸馏合规问题（用OpenAI/Anthropic输出训练商用模型的条款限制），毛利与可防御性都低于可验证域。", "score": 4, "reason": "观点明确有洞察，但信息量略少且未展开"}
+{"text": "问:根据材料，底座、零件、框架、思路四类中，哪类被描述为“深依赖，放心”，并且列举了Ray、vLLM/SGLang、Arrow/Parquet？\n答:底座。材料中明确将底座列为“深依赖，放心”，并列举了Ray、vLLM/SGLang、Arrow/Parquet作为其代表，理由是基础设施、社区巨大、不会死、无差异化价值。", "score": 5, "reason": "事实清晰，信息量足，无广告水文"}
+{"text": "问:材料中给出的“一句话版本”是什么？\n答:用它们的零件和思路，不用它们的框架；把钱花在库没有的东西上。这是对底座、零件、框架、思路四类关系的高度概括。", "score": 3, "reason": "回答正确但信息量少，未展开背景或细节。"}
+{"text": "问:在03文档的修正声明中，02方案中L2「执行引擎适配器」的地位在卖数据时发生了什么变化？\n答:在卖数据时，L2「执行引擎适配器」退化为车间内部的可替换零件层，不对外承诺、不深度投入、随时可拆。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:根据决策树，当前方向（卖数据/数据服务）的预算重心按优先级排序是什么？\n答:预算重心按优先级排序为：验证器 > 评测闭环 > 源渠道 > 血缘/配方表达 > judge蒸馏。", "score": 4, "reason": "回答清晰具体，信息量足，但未说明依据。"}
+{"text": "问:材料中认为高质量数据主要从哪里来？\n答:高质量从源的选择、可验证域的验证器、以及「训练-评测-归因」的反馈闭环里来，不从清洗算子里来。清洗去重只保住地板；验证器和闭环才决定天花板。", "score": 5, "reason": "事实清晰，信息量足，无广告，直接回答问题。"}
+{"text": "问:datafoundry/ 目录中，ops/ 子目录下包含哪些内置算子模块？\n答:ops/ 子目录下包含 filters.py（长度/符号比/重复度/屏蔽词/质量分/质量阈值/数学答案验证）、mappers.py（空白归一/HTML剥离/PII脱敏）、dedup.py（精确去重 + MinHash-LSH 近重复去重，用标准库实现）和 judge.py（LLM 判审，OpenAI 兼容后端，llm 成本档）。", "score": 5, "reason": "事实清晰，信息量足，无广告水文"}
+{"text": "问:datafoundry/ 中 security.py 使用了哪些开源组件？\n答:security.py 使用了 argon2-cffi 和 PyJWT 两个开源组件，用于实现鉴权原语。", "score": 4, "reason": "事实清晰，信息量足，但未提版本等细节。"}
+{"text": "问:datafoundry/ 中 runner.py 执行器的输出包含哪三件套？\n答:runner.py 执行器的输出包含 output、rejects 和 manifest 三件套。", "score": 5, "reason": "事实清晰准确，信息量足，无广告水文。"}
+{"text": "问:平台支持哪三种执行引擎？\n答:平台支持三种执行引擎：native（自研算子引擎，带漏斗编排和逐样本血缘）、datajuicer（通过dj-process子进程执行DJ配方）、以及后续可扩展的引擎（如DataFlow算子包装、Ray分片执行），它们沿同一接口扩展。", "score": 4, "reason": "信息具体清晰，但未说明平台名称，略欠完整。"}
+{"text": "问:为什么配置文件选择用JSON而不是YAML？\n答:配置文件选择用JSON是因为JSON是YAML的子集，这样连yaml依赖都不需要引入，可以减少依赖并简化配置处理。", "score": 4, "reason": "事实清晰，信息量足，但未提YAML优势，略片面。"}
+{"text": "问:funnel_compile 按什么顺序对操作进行稳定排序？\n答:funnel_compile 按成本档进行稳定排序，顺序为：heuristic（约分/GB）< model（约元/GB）< llm（约元/千样本）。", "score": 3, "reason": "信息基本准确但细节不足，未说明排序依据和具体成本。"}
+{"text": "问:在 demo 中，10 万样本、9 步流水线含一个 LLM 判审时，朴素顺序和漏斗顺序的成本分别是多少？节省了多少百分比？\n答:朴素顺序成本为 1500 单位，漏斗顺序成本为 803 单位，节省了 46%。", "score": 5, "reason": "事实清晰，数据具体，直接回答问题，无冗余。"}
+{"text": "问:根据材料，被杀样本在流水线中如何处理？记录在哪个文件中？\n答:被杀样本不会消失，而是进入 `rejects.jsonl` 文件，并带有死因（即被哪个算子拒绝及理由）。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:在鉴权体系中，API Key 的格式是什么？数据库中存储的是明文还是哈希？\n答:API Key 的格式是 `dfk_` 加上 32 字节随机数。数据库中只存储该 Key 的 SHA-256 哈希，明文仅在创建时展示一次，且可吊销。", "score": 5, "reason": "事实清晰准确，信息量足，无冗余广告。"}
+{"text": "问:根据材料，生产部署前需要补哪三件事？\n答:速率限制、登录失败锁定、TLS（交给反代）。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:`datafoundry mcp` 是什么类型的 MCP 服务？它有什么特点？\n答:`datafoundry mcp` 是 stdio MCP 服务，使用 JSON-RPC 2.0 自实现，零额外依赖。但它只是 HTTP API 的薄客户端，所有权限判定都发生在服务端。", "score": 4, "reason": "事实清晰，信息量足，但未深入细节。"}
+{"text": "问:如果用户使用 viewer 角色的 `DATAFOUNDRY_API_KEY`，他能调用上传数据集工具吗？为什么？\n答:不能。因为所有权限判定都发生在服务端，Claude Code 拿到的能力严格等于 `DATAFOUNDRY_API_KEY` 对应用户的角色，viewer 的 Key 连上传都调不动。", "score": 5, "reason": "事实清晰，权限判定明确，信息量足，无冗余。"}
+{"text": "问:`datafoundry mcp` 提供哪 8 个工具？\n答:`df_status`、`df_list_operators`、`df_list_datasets`、`df_upload_dataset`、`df_inspect_dataset`、`df_estimate_pipeline`、`df_run_pipeline`、`df_get_run`。", "score": 5, "reason": "事实清晰，信息量足，无广告"}
+{"text": "问:运行 `datafoundry demo` 命令会执行什么操作？需要账号吗？\n答:执行离线演示，展示脏数据 → 漏斗 → 报告的流程，不需要账号。", "score": 5, "reason": "事实清晰，信息量足，直接回答问题，无广告。"}
+{"text": "问:`datafoundry serve` 命令默认监听哪个地址和端口？\n答:默认监听 127.0.0.1:8321。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:首次使用 datafoundry 时，应使用什么命令创建 admin 用户？\n答:使用命令：-d '{\"username\":\"root\",\"password\":\"<你的口令>\"}'，该命令用于首次创建 admin 用户。", "score": 3, "reason": "信息基本准确但缺少命令全貌，未说明具体工具或上下文。"}
+{"text": "问:在 Claude Code 中接入 datafoundry MCP 时，需要设置哪些环境变量？\n答:需要设置两个环境变量：DATAFOUNDRY_URL（值为 http://127.0.0.1:8321）和 DATAFOUNDRY_API_KEY（值为 dfk_ 开头的 API Key）。", "score": 4, "reason": "信息具体清晰，但缺少配置步骤细节。"}
+{"text": "问:v0.1 版本中，单机处理样本的上限是多少？超过上限会怎样？\n答:单机上限为 50 万样本，超过上限时会明确报错。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:feishu-cli 采用哪种 OAuth 2.0 授权流？采用该授权流有什么好处？\n答:feishu-cli 采用 OAuth 2.0 Device Flow（RFC 8628）。好处是不需要在开放平台后台配置回调地址白名单。", "score": 4, "reason": "事实清晰准确，信息量适中，但未展开更多细节。"}
+{"text": "问:feishu-cli 的 `auth login` 命令在用户授权过程中，验证链接和 user_code 输出到哪里？在桌面端和 SSH 场景下分别有什么行为？\n答:验证链接和 user_code 被输出到 stderr。桌面端会尝试自动拉起浏览器；SSH 场景下自动拉起会静默失败，但链接已经打印出来，用户可手动复制打开。", "score": 5, "reason": "事实清晰，信息量足，无广告，直接回答问题。"}
+{"text": "问:feishu-cli 两段式 Agent 模式中，`auth login --no-wait --json` 和 `auth login --device-code <code> --json` 各自的作用是什么？\n答:`auth login --no-wait --json` 立即返回 device_code，不阻塞等待授权；`auth login --device-code <code> --json` 携带已有的 device_code 继续轮询授权状态。两者都使用 `--json` 输出事件流。", "score": 5, "reason": "事实清晰准确，信息量足，无广告水文。"}
+{"text": "问:feishu-cli 的 access token 和 refresh token 分别存储在哪个文件中？它们的有效期各是多少？\n答:feishu-cli 的凭据存储在 `~/.feishu-cli/token.json` 文件中，包含 access token 和 refresh token。其中 access token 的有效期约为 2 小时，refresh token 的有效期为 30 天且会自动续期。", "score": 5, "reason": "事实清晰，信息具体，无广告，满足标准。"}
+{"text": "问:feishu-cli 中令牌解析的优先级顺序是什么？\n答:feishu-cli 的令牌解析优先级从高到低依次为：`--user-access-token` 参数 > `FEISHU_USER_ACCESS_TOKEN` 环境变量 > token.json > config.yaml。", "score": 4, "reason": "事实清晰，信息量足，但未说明来源或验证方式。"}
+{"text": "问:TapTap OAuth 设备授权流中，`device/code` 端点返回哪些字段？客户端如何处理轮询和错误？\n答:TapTap OAuth 的 `device/code` 端点返回 `device_code`、`user_code`、`verification_url`、`interval` 和 `expires_in` 字段（另有二维码变体）。客户端按照 `interval` 字段指定的间隔轮询 token 端点，并处理 `authorization_pending`（表示用户尚未授权）和 `slow_down`（表示轮询过快，需降低频率）两种错误响应。", "score": 5, "reason": "事实清晰准确，字段与流程完整，信息量足无冗余。"}
+{"text": "问:在 DataFoundry 实现中，`POST /auth/device/start` 端点返回的 device_code 在数据库中是如何存储的？\n答:库中只存 device_code 的 SHA-256 哈希，而不是明文。", "score": 5, "reason": "事实清晰，信息量足，直接回答存储方式。"}
+{"text": "问:DataFoundry 的授权页面 `GET /device?code=` 在显示用户输入的 user_code 时，采取了什么安全措施防止注入？\n答:user_code 在页面中预填，并且输入内容经过 html.escape 处理以防注入。", "score": 5, "reason": "事实清晰，信息量足，无广告水文。"}
+{"text": "问:在 `POST /auth/device/decide` 端点中，程序化批准对 user_code 的格式有何宽容处理？\n答:user_code 的大小写和连字符是被宽容处理的（即不区分大小写，且对连字符位置或有无不敏感）。", "score": 5, "reason": "事实清晰准确，信息量足，无冗余。"}
+{"text": "问:在 POST /auth/device/token 接口的轮询过程中，当状态为 approved 时，会签发什么类型的 API Key？该 Key 再次查询时返回什么状态？\n答:当状态为 approved 时，会一次性签发以 dfk_ 开头的 API Key；该 Key 再次查询时返回 claimed 状态。", "score": 5, "reason": "事实清晰准确，信息量足，无冗余内容。"}
+{"text": "问:设备流认证中，device_code 和 user_code 分别有哪些安全特性？\n答:device_code 只存储哈希值；user_code 短时效且一次性使用。", "score": 4, "reason": "事实准确，信息量适中，但未展开细节。"}
+{"text": "问:在 CLI 中，执行 `datafoundry login --no-wait --json` 命令的作用是什么？\n答:该命令是两段式登录的第一步，用于立即返回 device_code，适用于 Agent 场景。", "score": 5, "reason": "事实清晰，信息量足，无广告，直接回答核心作用。"}
+{"text": "问:凭据文件默认存放路径和权限是什么？\n答:凭据文件默认存放在 `~/.datafoundry/credentials.json`，权限为 0600（即仅所有者可读写），包含 url、api_key、username、role、key_id 字段。", "score": 5, "reason": "事实清晰，路径权限字段明确，信息量足。"}
+{"text": "问:解析配置时，各项来源的优先级顺序是什么？\n答:解析优先级顺序为：显式参数 > `DATAFOUNDRY_URL` / `DATAFOUNDRY_API_KEY` 环境变量 > 凭据文件 > 默认值。", "score": 5, "reason": "事实清晰，优先级明确，信息量足，无冗余。"}
+{"text": "问:在烟测记录中，使用 `login --device-code ...` 后，凭据文件权限变为多少？\n答:使用 `login --device-code ...` 登录成功后，凭据文件落盘，权限为 `-rw-------`（即 0600）。", "score": 5, "reason": "事实清晰准确，信息量足，无冗余内容。"}
+{"text": "问:v0 自托管平台签发的是什么类型的令牌？它有什么特点？\n答:v0 自托管平台签发的是长期 API Key，该 Key 可被吊销。这与 feishu 的短 access token 加 30 天 refresh token 自动续期的双令牌机制不同。", "score": 4, "reason": "事实清晰对比明确，但信息量略少"}
+{"text": "问:自托管平台若对外多租户，应改用哪种令牌机制？\n答:自托管平台若对外多租户，应改用双令牌机制，即短 access token 加 refresh token 自动续期的模式，而不是 v0 当前使用的可吊销长 Key。", "score": 4, "reason": "事实清晰，信息量足，但略简略"}
+{"text": "问:TapTap 式二维码变体具体指什么？在 v0 中实现它需要额外做什么？\n答:TapTap 式二维码变体是指将 user_code 转换为二维码，用户通过手机扫码完成授权。在 v0 中，由于授权页已经是独立 URL，因此只需补充一步二维码渲染即可实现该变体。", "score": 4, "reason": "事实清晰，信息量足，但未展开实现细节。"}

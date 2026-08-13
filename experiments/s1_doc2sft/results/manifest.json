@@ -1,0 +1,103 @@
+{
+  "dataset": "experiments/s1_doc2sft/corpus.jsonl",
+  "steps_requested": [
+    {
+      "op": "text_chunk_mapper",
+      "params": {
+        "max_chars": 800
+      }
+    },
+    {
+      "op": "qa_generate_mapper"
+    },
+    {
+      "op": "llm_judge_filter"
+    },
+    {
+      "op": "exact_dedup"
+    },
+    {
+      "op": "minhash_dedup"
+    }
+  ],
+  "steps_executed": [
+    "text_chunk_mapper",
+    "exact_dedup",
+    "minhash_dedup",
+    "qa_generate_mapper",
+    "llm_judge_filter"
+  ],
+  "funnel_moves": [
+    "exact_dedup(heuristic) step[3] -> step[1]",
+    "minhash_dedup(heuristic) step[4] -> step[2]",
+    "qa_generate_mapper(llm) step[1] -> step[3]",
+    "llm_judge_filter(llm) step[2] -> step[4]"
+  ],
+  "n_in": 6,
+  "n_out": 121,
+  "retention": 20.1667,
+  "est_cost_total": 2.7052,
+  "per_op": [
+    {
+      "op": "text_chunk_mapper",
+      "params": {
+        "max_chars": 800
+      },
+      "cost_tier": "heuristic",
+      "in": 6,
+      "out": 40,
+      "killed": 0,
+      "retention": 6.6667,
+      "seconds": 0.001,
+      "est_cost": 0.0
+    },
+    {
+      "op": "exact_dedup",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 40,
+      "out": 40,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.001,
+      "est_cost": 0.0
+    },
+    {
+      "op": "minhash_dedup",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 40,
+      "out": 40,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.727,
+      "est_cost": 0.0002
+    },
+    {
+      "op": "qa_generate_mapper",
+      "params": {},
+      "cost_tier": "llm",
+      "in": 40,
+      "out": 127,
+      "killed": 0,
+      "retention": 3.175,
+      "seconds": 98.847,
+      "est_cost": 0.8
+    },
+    {
+      "op": "llm_judge_filter",
+      "params": {},
+      "cost_tier": "llm",
+      "in": 127,
+      "out": 121,
+      "killed": 6,
+      "retention": 0.9528,
+      "seconds": 141.777,
+      "est_cost": 1.905
+    }
+  ],
+  "output": "experiments/s1_doc2sft/results/output.jsonl",
+  "rejects": "experiments/s1_doc2sft/results/rejects.jsonl",
+  "judge_labels": "experiments/s1_doc2sft/results/judge_labels.jsonl",
+  "judge_labels_count": 127
+}
