@@ -43,6 +43,8 @@ jobs:
           if kaggle kernels output "s4526291/${{ inputs.slug }}" -p out 2>/dev/null; then
             echo "--- eval_report.json ---"
             cat out/eval_report.json 2>/dev/null || echo "(无 eval_report.json)"
+            echo "--- generations 前 5 条(诊断模型实际输出)---"
+            head -5 out/result/generations.jsonl 2>/dev/null | cut -c1-1500 || echo "(无 generations.jsonl)"
             echo "--- log tail ---"
             tail -40 out/*.log 2>/dev/null || true
           else
