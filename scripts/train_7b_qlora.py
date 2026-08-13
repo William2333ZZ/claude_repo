@@ -25,8 +25,8 @@ MAX_LEN = 320
 HPARAMS = dict(
     num_train_epochs=2, learning_rate=2e-4, per_device_train_batch_size=1,
     gradient_accumulation_steps=8, warmup_ratio=0.03, logging_steps=10,
-    save_strategy="no", report_to=[], bf16=True,
-)
+    save_strategy="no", report_to=[],
+)  # 精度(bf16/fp16)在 main 里按硬件探测后注入
 
 
 def load_pairs(path: pathlib.Path) -> list[dict]:
@@ -57,12 +57,19 @@ def main() -> int:
                               BitsAndBytesConfig, Trainer, TrainingArguments, set_seed)
 
     set_seed(SEED)
+    bf16_ok = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    compute_dtype = torch.bfloat16 if bf16_ok else torch.float16
+    HPARAMS["bf16" if bf16_ok else "fp16"] = True
+    cap = torch.cuda.get_device_capability() if torch.cuda.is_available() else (0, 0)
+    print(f"GPU capability={cap} bf16={bf16_ok} compute_dtype={compute_dtype}")
+    if cap and cap < (7, 0):
+        sys.exit(f"GPU sm_{cap[0]}{cap[1]} 低于 bitsandbytes 4bit 最低要求 sm_70:请换 T4/更新架构")
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
     tok = AutoTokenizer.from_pretrained(MODEL)
     bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                             bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
+                             bnb_4bit_compute_dtype=compute_dtype, bnb_4bit_use_double_quant=True)
     model = AutoModelForCausalLM.from_pretrained(MODEL, quantization_config=bnb, device_map="auto")
 
     t0 = time.time()

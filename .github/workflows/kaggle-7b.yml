@@ -46,6 +46,7 @@ jobs:
             "kernel_type": "script",
             "is_private": true,
             "enable_gpu": true,
+            "accelerator": "nvidiaTeslaT4",
             "enable_internet": true,
             "dataset_sources": [],
             "competition_sources": [],
@@ -88,10 +89,9 @@ jobs:
             sleep 180
             ST=$(kaggle kernels status "s4526291/$SLUG" 2>&1 || true)
             echo "[poll $i] $ST"
-            case "$ST" in
-              *complete*) break ;;
-              *error*|*cancel*) echo "::error::kernel 失败: $ST"; kaggle kernels output "s4526291/$SLUG" -p out || true; tail -50 out/*.log 2>/dev/null || true; exit 1 ;;
-            esac
+            if echo "$ST" | grep -qi "complete"; then break; fi
+            if echo "$ST" | grep -qiE "error|cancel"; then
+              echo "::error::kernel 失败: $ST"; kaggle kernels output "s4526291/$SLUG" -p out || true; tail -60 out/*.log 2>/dev/null || true; exit 1; fi
             if [ "$i" = "100" ]; then echo "::warning::超时未完成,kernel 仍在 Kaggle 运行,稍后用 kaggle kernels output 取结果"; exit 1; fi
           done
       - name: Fetch result
