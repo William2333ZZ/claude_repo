@@ -91,14 +91,22 @@ def main() -> int:
             LoraConfig(r=8, lora_alpha=16, lora_dropout=0.05, task_type="CAUSAL_LM",
                        target_modules=["q_proj", "k_proj", "v_proj", "o_proj"]),
         )
+        # transformers 跨版本容忍:期望参数按运行时签名过滤,不支持的自动丢弃并打印
+        import inspect
+
+        wanted = {
+            "output_dir": str(out / "trainer"), "num_train_epochs": EPOCHS, "learning_rate": LR,
+            "per_device_train_batch_size": 2, "gradient_accumulation_steps": 8,
+            "logging_steps": 10, "save_strategy": "no", "report_to": [], "seed": SEED,
+            "lr_scheduler_type": "cosine", "warmup_ratio": 0.03, "use_cpu": True,
+        }
+        sig = inspect.signature(TrainingArguments.__init__).parameters
+        dropped = sorted(set(wanted) - set(sig))
+        if dropped:
+            print(f"[compat] 当前 transformers 不支持并已丢弃: {dropped}")
         trainer = Trainer(
             model=model,
-            args=TrainingArguments(
-                output_dir=str(out / "trainer"), num_train_epochs=EPOCHS, learning_rate=LR,
-                per_device_train_batch_size=2, gradient_accumulation_steps=8,
-                logging_steps=10, save_strategy="no", report_to=[], seed=SEED,
-                lr_scheduler_type="cosine", warmup_ratio=0.03, use_cpu=True,
-            ),
+            args=TrainingArguments(**{k: v for k, v in wanted.items() if k in sig}),
             train_dataset=features,
             data_collator=collate,
         )
@@ -117,10 +125,12 @@ def main() -> int:
     with torch.no_grad():
         for i, it in enumerate(items, 1):
             msgs = [{"role": "user", "content": PROMPT.format(question=it["question"])}]
-            ids = tok.apply_chat_template(msgs, return_tensors="pt", add_generation_prompt=True)
-            gen = model.generate(ids, max_new_tokens=EVAL_MAX_NEW, do_sample=False,
+            # 跨版本稳妥:先出纯文本 prompt,再显式 tokenize(绕开 apply_chat_template 返回类型差异)
+            prompt = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
+            enc = tok(prompt, return_tensors="pt")
+            gen = model.generate(**enc, max_new_tokens=EVAL_MAX_NEW, do_sample=False,
                                  pad_token_id=tok.pad_token_id or tok.eos_token_id)
-            outputs[it["id"]] = tok.decode(gen[0][ids.shape[1]:], skip_special_tokens=True)
+            outputs[it["id"]] = tok.decode(gen[0][enc["input_ids"].shape[1]:], skip_special_tokens=True)
             print(f"\reval [{i}/{len(items)}]", end="", flush=True)
     print()
     report = score(items, outputs)
