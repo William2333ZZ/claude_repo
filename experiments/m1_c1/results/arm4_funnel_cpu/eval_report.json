@@ -1,0 +1,441 @@
+{
+  "evalset": "math_zh_v1",
+  "n_items": 60,
+  "n_correct": 42,
+  "n_missing": 0,
+  "accuracy": 70.0,
+  "results": [
+    {
+      "id": "math_zh_v1-change-1",
+      "want": "11",
+      "got": "11",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-change-2",
+      "want": "10",
+      "got": "10",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-change-3",
+      "want": "3",
+      "got": "3",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-change-4",
+      "want": "4",
+      "got": "4",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-change-5",
+      "want": "19",
+      "got": "19",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-distance-1",
+      "want": "120",
+      "got": "120",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-distance-2",
+      "want": "270",
+      "got": "270",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-distance-3",
+      "want": "240",
+      "got": "240",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-distance-4",
+      "want": "288",
+      "got": "288",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-distance-5",
+      "want": "200",
+      "got": "200",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-discount-1",
+      "want": "384",
+      "got": "30720",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-discount-2",
+      "want": "72",
+      "got": "4320",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-discount-3",
+      "want": "270",
+      "got": "270",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-discount-4",
+      "want": "150",
+      "got": "150",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-discount-5",
+      "want": "225",
+      "got": "225",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-average-1",
+      "want": "82",
+      "got": "82",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-average-2",
+      "want": "78",
+      "got": "75",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-average-3",
+      "want": "80",
+      "got": "80",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-average-4",
+      "want": "65",
+      "got": "65",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-average-5",
+      "want": "85",
+      "got": "85",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-cowork-1",
+      "want": "3",
+      "got": "3",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-cowork-2",
+      "want": "4",
+      "got": "32",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-cowork-3",
+      "want": "5",
+      "got": "2",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-cowork-4",
+      "want": "5",
+      "got": "5",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-cowork-5",
+      "want": "2",
+      "got": "2",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-age-1",
+      "want": "12",
+      "got": "12",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-age-2",
+      "want": "10",
+      "got": "10",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-age-3",
+      "want": "8",
+      "got": "8",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-age-4",
+      "want": "11",
+      "got": "11",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-age-5",
+      "want": "10",
+      "got": "10",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-chicken_rabbit-1",
+      "want": "3",
+      "got": "3",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-chicken_rabbit-2",
+      "want": "6",
+      "got": "6",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-chicken_rabbit-3",
+      "want": "4",
+      "got": "4",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-chicken_rabbit-4",
+      "want": "11",
+      "got": "11",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-chicken_rabbit-5",
+      "want": "3",
+      "got": "3",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-fill_pool-1",
+      "want": "6",
+      "got": "6",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-fill_pool-2",
+      "want": "4",
+      "got": "45",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-fill_pool-3",
+      "want": "8",
+      "got": "8",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-fill_pool-4",
+      "want": "4",
+      "got": "2",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-fill_pool-5",
+      "want": "3",
+      "got": "3",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-ratio_share-1",
+      "want": "18",
+      "got": "18",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-ratio_share-2",
+      "want": "60",
+      "got": "60",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-ratio_share-3",
+      "want": "21",
+      "got": "21",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-ratio_share-4",
+      "want": "56",
+      "got": "56",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-ratio_share-5",
+      "want": "95",
+      "got": "95",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-profit-1",
+      "want": "40",
+      "got": "40",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-profit-2",
+      "want": "15",
+      "got": "15",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-profit-3",
+      "want": "30",
+      "got": "30",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-profit-4",
+      "want": "10",
+      "got": "1",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-profit-5",
+      "want": "25",
+      "got": "25",
+      "correct": true,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-arith_sum-1",
+      "want": "98",
+      "got": "90",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-arith_sum-2",
+      "want": "104",
+      "got": "96",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-arith_sum-3",
+      "want": "240",
+      "got": "220",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-arith_sum-4",
+      "want": "260",
+      "got": "200",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-arith_sum-5",
+      "want": "50",
+      "got": "65",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-trees-1",
+      "want": "11",
+      "got": "12",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-trees-2",
+      "want": "16",
+      "got": "17",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-trees-3",
+      "want": "18",
+      "got": "19",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-trees-4",
+      "want": "10",
+      "got": "11",
+      "correct": false,
+      "missing": false
+    },
+    {
+      "id": "math_zh_v1-trees-5",
+      "want": "23",
+      "got": "345",
+      "correct": false,
+      "missing": false
+    }
+  ],
+  "train_meta": {
+    "model": "Qwen/Qwen2.5-0.5B-Instruct",
+    "trained": true,
+    "train_cap": 1000,
+    "epochs": 2,
+    "lr": 0.0002,
+    "max_len": 320,
+    "seed": 42,
+    "train_seconds": 3760,
+    "eval_seconds": 359,
+    "data": "experiments/m1_c1/results/arm4_funnel/output.jsonl"
+  }
+}

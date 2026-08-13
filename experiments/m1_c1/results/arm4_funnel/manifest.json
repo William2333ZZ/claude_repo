@@ -1,0 +1,162 @@
+{
+  "dataset": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/corpus_raw.jsonl",
+  "steps_requested": [
+    {
+      "op": "whitespace_normalize"
+    },
+    {
+      "op": "length_filter",
+      "params": {
+        "min_len": 20
+      }
+    },
+    {
+      "op": "symbol_ratio_filter"
+    },
+    {
+      "op": "repetition_filter"
+    },
+    {
+      "op": "exact_dedup"
+    },
+    {
+      "op": "minhash_dedup",
+      "params": {
+        "num_perm": 128,
+        "bands": 8
+      }
+    },
+    {
+      "op": "math_answer_verify",
+      "params": {
+        "reference_key": "reference"
+      }
+    },
+    {
+      "op": "llm_judge_filter",
+      "params": {
+        "criteria": "数学题目清晰、解答步骤正确、答案与推理一致",
+        "min_score": 3
+      }
+    }
+  ],
+  "steps_executed": [
+    "whitespace_normalize",
+    "length_filter",
+    "symbol_ratio_filter",
+    "repetition_filter",
+    "exact_dedup",
+    "minhash_dedup",
+    "math_answer_verify",
+    "llm_judge_filter"
+  ],
+  "funnel_moves": [],
+  "n_in": 5000,
+  "n_out": 2422,
+  "retention": 0.4844,
+  "est_cost_total": 36.5604,
+  "per_op": [
+    {
+      "op": "whitespace_normalize",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 5000,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.02,
+      "est_cost": 0.001
+    },
+    {
+      "op": "length_filter",
+      "params": {
+        "min_len": 20
+      },
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 5000,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.003,
+      "est_cost": 0.001
+    },
+    {
+      "op": "symbol_ratio_filter",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 4989,
+      "killed": 11,
+      "retention": 0.9978,
+      "seconds": 0.039,
+      "est_cost": 0.001
+    },
+    {
+      "op": "repetition_filter",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 4989,
+      "out": 4989,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.021,
+      "est_cost": 0.0025
+    },
+    {
+      "op": "exact_dedup",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 4989,
+      "out": 4726,
+      "killed": 263,
+      "retention": 0.9473,
+      "seconds": 0.031,
+      "est_cost": 0.0025
+    },
+    {
+      "op": "minhash_dedup",
+      "params": {
+        "num_perm": 128,
+        "bands": 8
+      },
+      "cost_tier": "heuristic",
+      "in": 4726,
+      "out": 3782,
+      "killed": 944,
+      "retention": 0.8003,
+      "seconds": 12.554,
+      "est_cost": 0.0236
+    },
+    {
+      "op": "math_answer_verify",
+      "params": {
+        "reference_key": "reference"
+      },
+      "cost_tier": "heuristic",
+      "in": 3782,
+      "out": 2435,
+      "killed": 1347,
+      "retention": 0.6438,
+      "seconds": 0.047,
+      "est_cost": 0.0038
+    },
+    {
+      "op": "llm_judge_filter",
+      "params": {
+        "criteria": "数学题目清晰、解答步骤正确、答案与推理一致",
+        "min_score": 3
+      },
+      "cost_tier": "llm",
+      "in": 2435,
+      "out": 2422,
+      "killed": 13,
+      "retention": 0.9947,
+      "seconds": 2728.404,
+      "est_cost": 36.525
+    }
+  ],
+  "output": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/results/arm4_funnel/output.jsonl",
+  "rejects": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/results/arm4_funnel/rejects.jsonl",
+  "judge_labels": "/home/runner/work/claude_repo/claude_repo/experiments/m1_c1/results/arm4_funnel/judge_labels.jsonl",
+  "judge_labels_count": 2435
+}

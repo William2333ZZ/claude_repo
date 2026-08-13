@@ -1,0 +1,71 @@
+{
+  "n_in": 5000,
+  "n_out": 2422,
+  "est_cost_total": 36.5604,
+  "clean_retention": 0.728,
+  "noise_kill_rate": {
+    "dup": 0.548,
+    "near_dup": 0.5,
+    "offtopic": 1.0,
+    "spam": 1.0,
+    "wrong_answer": 1.0
+  },
+  "per_class": {
+    "clean": {
+      "total": 3000,
+      "kept": 2184,
+      "retention": 0.728,
+      "killed_by": {
+        "exact_dedup": 140,
+        "minhash_dedup": 675,
+        "llm_judge_filter": 1
+      }
+    },
+    "dup": {
+      "total": 250,
+      "kept": 113,
+      "retention": 0.452,
+      "killed_by": {
+        "exact_dedup": 113,
+        "minhash_dedup": 24
+      }
+    },
+    "near_dup": {
+      "total": 250,
+      "kept": 125,
+      "retention": 0.5,
+      "killed_by": {
+        "exact_dedup": 10,
+        "minhash_dedup": 115
+      }
+    },
+    "offtopic": {
+      "total": 350,
+      "kept": 0,
+      "retention": 0.0,
+      "killed_by": {
+        "minhash_dedup": 3,
+        "math_answer_verify": 335,
+        "llm_judge_filter": 12
+      }
+    },
+    "spam": {
+      "total": 400,
+      "kept": 0,
+      "retention": 0.0,
+      "killed_by": {
+        "symbol_ratio_filter": 11,
+        "math_answer_verify": 389
+      }
+    },
+    "wrong_answer": {
+      "total": 750,
+      "kept": 0,
+      "retention": 0.0,
+      "killed_by": {
+        "minhash_dedup": 127,
+        "math_answer_verify": 623
+      }
+    }
+  }
+}
