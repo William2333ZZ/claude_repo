@@ -1,0 +1,187 @@
+# [M1-C1] LLM 判审实验跳板:沙箱出不了网,Actions 跑器代跑 DeepSeek 判审。
+# 前置:仓库 Secret DEEPSEEK_API_KEY(Settings -> Secrets and variables -> Actions)。
+# 任务:judge_smoke(3 样本连通烟测)/ arms(arm2+arm4 产线->训练->评测)/ doc2sft(S1 场景端到端)。
+# 成本纪律:先 judge_smoke 计量单样本延迟与可用性,再放量;judge 错误率 >20% 训练前熔断。
+
+name: llm-experiments
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "任务"
+        type: choice
+        options: [judge_smoke, arms, doc2sft]
+        default: judge_smoke
+        required: true
+      seed:
+        description: "训练种子(arms 任务)"
+        default: "42"
+        required: true
+      max_docs:
+        description: "doc2sft 最多取几篇文档"
+        default: "6"
+        required: true
+
+env:
+  DATAFOUNDRY_LLM_BASE: https://api.deepseek.com/v1
+  DATAFOUNDRY_LLM_MODEL: deepseek-chat
+
+jobs:
+  judge-smoke:
+    if: inputs.task == 'judge_smoke'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard secret
+        run: |
+          if [ -z "${{ secrets.DEEPSEEK_API_KEY }}" ]; then
+            echo "::error::缺少仓库 Secret DEEPSEEK_API_KEY"; exit 1; fi
+      - run: pip install --quiet -e .
+      - name: Smoke 3 samples
+        env:
+          DATAFOUNDRY_LLM_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python - <<'EOF'
+          import json, time
+          import datafoundry.ops
+          from datafoundry.registry import create_op
+          from datafoundry.schema import make_sample
+          op = create_op("llm_judge_filter", criteria="数学题目清晰、解答步骤正确、答案与推理一致", min_score=3)
+          rows = [
+              "问题:小明有 3 个苹果,又买了 5 个,现在共有几个?解答:3+5=8,答案是 8。",
+              "问题:小红有 4 支笔,送出 1 支,还剩几支?解答:4-1=2,答案是 2。",
+              "今天天气不错,适合出门散步。",
+          ]
+          for text in rows:
+              s = make_sample(text)
+              t0 = time.time()
+              out = op.process(s)
+              dt = time.time() - t0
+              info = (out or s)["stats"]
+              print(json.dumps({"latency_s": round(dt, 2), "kept": out is not None,
+                                "score": info.get("judge_score"), "reason": info.get("judge_reason"),
+                                "error": info.get("judge_error")}, ensure_ascii=False))
+          EOF
+
+  arms:
+    if: inputs.task == 'arms'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        arm: [arm2_llm_only, arm4_funnel]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard secret
+        run: |
+          if [ -z "${{ secrets.DEEPSEEK_API_KEY }}" ]; then
+            echo "::error::缺少仓库 Secret DEEPSEEK_API_KEY"; exit 1; fi
+      - name: Install deps (CPU torch)
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet "transformers>=4.44" "peft>=0.12" accelerate
+          pip install --quiet -e .
+      - name: Pipeline with LLM judge
+        env:
+          DATAFOUNDRY_LLM_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          python experiments/m1_c1/generate_corpus.py
+          python experiments/m1_c1/run_arm.py --arm ${{ matrix.arm }}
+      - name: Judge health check (熔断)
+        run: |
+          python - <<'EOF'
+          import json, pathlib, sys
+          d = pathlib.Path("experiments/m1_c1/results/${{ matrix.arm }}")
+          rows = [json.loads(l) for p in ("output.jsonl", "rejects.jsonl")
+                  for l in (d / p).read_text(encoding="utf-8").splitlines() if l.strip()]
+          judged = [r for r in rows if "judge_score" in r.get("stats", {})]
+          errors = [r for r in rows if "judge_error" in r.get("stats", {})]
+          total = len(judged) + len(errors)
+          rate = len(errors) / total if total else 1.0
+          print(f"judged={len(judged)} errors={len(errors)} error_rate={rate:.1%}")
+          if rate > 0.20:
+              print("::error::judge 错误率超 20%,判审端点异常,熔断以免浪费训练时长")
+              sys.exit(1)
+          EOF
+      - name: Train + eval (0.5B LoRA, CPU)
+        env:
+          TRAIN_SEED: ${{ inputs.seed }}
+        run: |
+          python scripts/train_cpu_proxy.py \
+            --data experiments/m1_c1/results/${{ matrix.arm }}/output.jsonl \
+            --out experiments/m1_c1/results/${{ matrix.arm }}_cpu
+      - uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.arm }}-seed${{ inputs.seed }}
+          path: experiments/m1_c1/results/
+      - name: Commit results
+        run: |
+          git config user.name "Claude" && git config user.email "noreply@anthropic.com"
+          git add experiments/m1_c1/results/${{ matrix.arm }} experiments/m1_c1/results/${{ matrix.arm }}_cpu || true
+          git commit -m "experiment(${{ matrix.arm }}): DeepSeek 判审产线+CPU 训练评测(seed=${{ inputs.seed }})" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 2))
+          done
+          exit 1
+
+  doc2sft:
+    if: inputs.task == 'doc2sft'
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Guard secret
+        run: |
+          if [ -z "${{ secrets.DEEPSEEK_API_KEY }}" ]; then
+            echo "::error::缺少仓库 Secret DEEPSEEK_API_KEY"; exit 1; fi
+      - run: pip install --quiet -e .
+      - name: Build corpus from our own docs (S1 私域文档替身)
+        run: |
+          python - <<'EOF'
+          import json, pathlib
+          docs = sorted(pathlib.Path("docs").glob("*.md"))[: int("${{ inputs.max_docs }}")]
+          out = pathlib.Path("experiments/s1_doc2sft"); out.mkdir(parents=True, exist_ok=True)
+          with open(out / "corpus.jsonl", "w", encoding="utf-8") as fh:
+              for p in docs:
+                  fh.write(json.dumps({"text": p.read_text(encoding="utf-8"), "meta": {"source": p.name}},
+                                      ensure_ascii=False) + "\n")
+          print("docs:", [p.name for p in docs])
+          EOF
+      - name: Refine with doc2sft_v0
+        env:
+          DATAFOUNDRY_LLM_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+        run: |
+          datafoundry refine --recipe doc2sft_v0 \
+            --in experiments/s1_doc2sft/corpus.jsonl \
+            --out experiments/s1_doc2sft/results
+      - name: Show samples + audit
+        run: |
+          head -3 experiments/s1_doc2sft/results/output.jsonl
+          datafoundry audit --run experiments/s1_doc2sft/results --standard tc260
+      - name: Commit results
+        run: |
+          git config user.name "Claude" && git config user.email "noreply@anthropic.com"
+          git add experiments/s1_doc2sft
+          git commit -m "experiment(s1-doc2sft): 自有文档走通 doc2sft_v0(S1 中保真)" || exit 0
+          for i in 1 2 3 4; do
+            git pull --rebase origin ${GITHUB_REF_NAME} && git push origin HEAD:${GITHUB_REF_NAME} && exit 0
+            sleep $((i * 2))
+          done
+          exit 1
