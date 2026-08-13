@@ -1,0 +1,87 @@
+# 支付宝支付链路验收(经 Actions 跑器,开发容器出网受限):
+#   action=order   登录 -> 建单 -> 打印订单号与二维码内容(QR_CODE_URL 行)
+#   action=balance 登录 -> 查余额与订单状态(支付后验证入账用)
+# 凭据走 secrets(DF_ADMIN_PASSWORD),日志不落密。
+
+name: alipay-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "order | balance"
+        default: "order"
+        required: true
+      plan:
+        description: "套餐(order 时用)"
+        default: "starter"
+        required: true
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Run smoke
+        env:
+          BASE: https://datafoundry.onrender.com
+          ADMIN_USER: william
+          ADMIN_PW: ${{ secrets.DF_ADMIN_PASSWORD }}
+          ACTION: ${{ inputs.action }}
+          PLAN: ${{ inputs.plan }}
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys, time, urllib.request, urllib.error
+
+          BASE = os.environ["BASE"]
+
+          def call(method, path, body=None, token=None):
+              req = urllib.request.Request(
+                  BASE + path,
+                  data=json.dumps(body).encode() if body is not None else None,
+                  method=method,
+                  headers={"Content-Type": "application/json",
+                           **({"Authorization": f"Bearer {token}"} if token else {})},
+              )
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  return json.loads(r.read())
+
+          # 等服务醒来(免费档冷启动 30-60s)
+          for i in range(30):
+              try:
+                  health = call("GET", "/health")
+                  break
+              except Exception as e:
+                  print(f"waiting service... ({i}) {e}")
+                  time.sleep(10)
+          else:
+              sys.exit("服务 120s 内未就绪")
+          print("health:", json.dumps(health, ensure_ascii=False))
+
+          login = call("POST", "/auth/login",
+                       {"username": os.environ["ADMIN_USER"], "password": os.environ["ADMIN_PW"]})
+          token = login["token"]
+          print("login ok, role:", login["role"])
+
+          summary = open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8")
+          if os.environ["ACTION"] == "order":
+              try:
+                  resp = call("POST", f"/billing/orders?plan={os.environ['PLAN']}", body={}, token=token)
+              except urllib.error.HTTPError as e:
+                  detail = e.read().decode(errors="replace")
+                  print(f"建单失败 HTTP {e.code}: {detail}")
+                  sys.exit(1)
+              order, pay = resp["order"], resp["payment"]
+              print("ORDER_ID:", order["id"])
+              print("AMOUNT:", order["amount_cents"] / 100, order["currency"])
+              print("QR_CODE_URL:", pay.get("code_url") or pay.get("pay_url"))
+              summary.write(f"### 支付宝订单已创建\n- 订单: `{order['id']}`\n"
+                            f"- 金额: {order['amount_cents']/100} {order['currency']}\n"
+                            f"- 二维码内容: `{pay.get('code_url') or pay.get('pay_url')}`\n")
+          else:
+              me = call("GET", "/billing/me", token=token)
+              print("BALANCE:", me["balance"])
+              for o in me["orders"][:5]:
+                  print("ORDER:", o["id"], o["plan"], o["status"])
+              summary.write(f"### 余额\n- balance: {me['balance']}\n")
+          EOF
