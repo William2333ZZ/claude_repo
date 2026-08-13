@@ -36,6 +36,8 @@ jobs:
           ADMIN_USER: ${{ inputs.admin_user }}
           REPO_URL: ${{ github.server_url }}/${{ github.repository }}
           BRANCH: ${{ github.ref_name }}
+          STRIPE_API_KEY: ${{ secrets.STRIPE_API_KEY }}
+          STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
         run: |
           python - <<'EOF'
           import json, os, sys, time, urllib.request
@@ -73,6 +75,18 @@ jobs:
           print("owner:", owner_id)
 
           env_vars = [{"key": "DATAFOUNDRY_BOOTSTRAP_ADMIN", "value": f"{ADMIN}:{PW}"}]
+          # 计费:配置了 Stripe secrets 就自动启用(未配置则计费保持关闭,平台行为不变)
+          sk, whsec = os.environ.get("STRIPE_API_KEY", ""), os.environ.get("STRIPE_WEBHOOK_SECRET", "")
+          if sk and whsec:
+              env_vars += [
+                  {"key": "DATAFOUNDRY_BILLING_PROVIDER", "value": "stripe"},
+                  {"key": "STRIPE_API_KEY", "value": sk},
+                  {"key": "STRIPE_WEBHOOK_SECRET", "value": whsec},
+                  {"key": "STRIPE_SUCCESS_URL", "value": f"https://{NAME}.onrender.com/health"},
+              ]
+              print("计费:Stripe 已启用")
+          else:
+              print("计费:未配置 Stripe secrets,保持关闭")
 
           # 2) 已存在则复用:更新环境变量并触发部署
           st, existing = call("GET", f"/services?name={NAME}&limit=5")
