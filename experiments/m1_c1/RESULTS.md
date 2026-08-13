@@ -68,6 +68,7 @@
 
 - [x] 种子复验(42/43/44/45 四种子完成,见顶部终局汇总)
 - [ ] LLM 端点到位后补 arm2 与 arm4 完整版(DeepSeek key 已供给,待 Secret 配置后触发)
-- [ ] 7B 复验(Kaggle GPU 资源已到位,待 Secret 配置)
+- [ ] 7B 复验(Kaggle GPU 资源已到位,Secret 已配)
+- [ ] **C1d 从零证伪(MiniMind 26M/64M)**:同语料 refined vs raw 从零预训练+SFT——消除 LoRA-on-Qwen 的预训练知识混淆因子,证据阶梯补上「纯净仪器」一级(26M 从零 / 0.5B LoRA / 7B QLoRA 三尺度);Kaggle GPU 单次 ¥3 级
 - [ ] C2 报告**首页**加证据等级声明:全部证据基于合成语料+自出评测集+0.5B 代理;7B 与真实语料为证据升级路径,不得混级表述
 - [ ] 汇总进 M1-C2 公开报告,gate 判定(代理 Owner 建议已出:通过,限定主张;报备否决窗口)
