@@ -1,0 +1,51 @@
+# 网页侦察跳板:沙箱出网受限,Actions 跑器代抓公开网页,正文抽取后打进日志。
+# 用途:竞品/客群公开页面调研(docs/19 P-agent 扫描等)。只抓公开页,不带凭据。
+
+name: fetch-page
+
+on:
+  workflow_dispatch:
+    inputs:
+      urls:
+        description: "逗号分隔的 URL 列表"
+        required: true
+      max_chars:
+        description: "每页正文截断长度"
+        default: "12000"
+        required: true
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --quiet html2text requests
+      - name: Fetch and extract
+        run: |
+          python - <<'EOF'
+          import html2text, requests, re
+
+          urls = [u.strip() for u in "${{ inputs.urls }}".split(",") if u.strip()]
+          cap = int("${{ inputs.max_chars }}")
+          h = html2text.HTML2Text()
+          h.ignore_images = True
+          h.body_width = 0
+          for url in urls:
+              print(f"\n===== PAGE: {url} =====")
+              try:
+                  r = requests.get(url, timeout=30, headers={
+                      "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/126 Safari/537.36",
+                      "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+                  })
+                  print(f"HTTP {r.status_code} | {len(r.text)} chars raw")
+                  text = h.handle(r.text)
+                  text = re.sub(r"\n{3,}", "\n\n", text).strip()
+                  print(text[:cap])
+                  if len(text) > cap:
+                      print(f"\n...[截断,全文 {len(text)} chars]")
+              except Exception as exc:
+                  print(f"FETCH_ERROR: {exc}")
+          EOF
