@@ -1,0 +1,81 @@
+{
+  "dataset": "/home/user/claude_repo/experiments/m1_c1/corpus_raw.jsonl",
+  "steps_requested": [
+    {
+      "op": "whitespace_normalize"
+    },
+    {
+      "op": "exact_dedup"
+    },
+    {
+      "op": "quality_score"
+    },
+    {
+      "op": "quality_threshold_filter",
+      "params": {
+        "min_quality": 0.574
+      }
+    }
+  ],
+  "steps_executed": [
+    "whitespace_normalize",
+    "exact_dedup",
+    "quality_score",
+    "quality_threshold_filter"
+  ],
+  "funnel_moves": [],
+  "n_in": 5000,
+  "n_out": 3675,
+  "retention": 0.735,
+  "est_cost_total": 0.0064,
+  "per_op": [
+    {
+      "op": "whitespace_normalize",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 5000,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.031,
+      "est_cost": 0.001
+    },
+    {
+      "op": "exact_dedup",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 5000,
+      "out": 4737,
+      "killed": 263,
+      "retention": 0.9474,
+      "seconds": 0.043,
+      "est_cost": 0.0025
+    },
+    {
+      "op": "quality_score",
+      "params": {},
+      "cost_tier": "heuristic",
+      "in": 4737,
+      "out": 4737,
+      "killed": 0,
+      "retention": 1.0,
+      "seconds": 0.067,
+      "est_cost": 0.0024
+    },
+    {
+      "op": "quality_threshold_filter",
+      "params": {
+        "min_quality": 0.574
+      },
+      "cost_tier": "heuristic",
+      "in": 4737,
+      "out": 3675,
+      "killed": 1062,
+      "retention": 0.7758,
+      "seconds": 0.023,
+      "est_cost": 0.0005
+    }
+  ],
+  "output": "/home/user/claude_repo/experiments/m1_c1/results/arm3_scorer/output.jsonl",
+  "rejects": "/home/user/claude_repo/experiments/m1_c1/results/arm3_scorer/rejects.jsonl"
+}

@@ -1,11 +1,11 @@
 {
   "name": "arm3_scorer",
   "hypothesis": "打分器阈值选择(FineWeb-Edu 式路线的 v0 代理):选'像好数据的',不验证对错",
-  "note": "v0 用启发式质量分代替训练出的打分器;升级为训练打分器后重跑本组并在报告标注",
+  "note": "v0 用启发式质量分代替训练出的打分器;阈值 0.574 为体量对齐校准(保留量≈arm1 产出 3782)。实测本语料上启发式分区分度弱(0.53-0.63),此为记录在案的发现:打分器路线需要训练出的分类器",
   "steps": [
     {"op": "whitespace_normalize"},
     {"op": "exact_dedup"},
     {"op": "quality_score"},
-    {"op": "quality_threshold_filter", "params": {"min_quality": 0.65}}
+    {"op": "quality_threshold_filter", "params": {"min_quality": 0.574}}
   ]
 }

@@ -7,7 +7,7 @@
     {"op": "symbol_ratio_filter"},
     {"op": "repetition_filter"},
     {"op": "exact_dedup"},
-    {"op": "minhash_dedup"},
+    {"op": "minhash_dedup", "params": {"num_perm": 128, "bands": 8}},
     {"op": "math_answer_verify", "params": {"reference_key": "reference"}},
     {"op": "llm_judge_filter", "params": {"criteria": "数学题目清晰、解答步骤正确、答案与推理一致", "min_score": 3}}
   ]
