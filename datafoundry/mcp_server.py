@@ -113,6 +113,14 @@ TOOLS: list[dict] = [
         },
     },
     {
+        "name": "df_list_recipes",
+        "description": "列出命名配方(简单算子的组合+实验证据出处);传 name 看完整定义。配方可直接作为 df_run_pipeline 的 recipe_name",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"name": {"type": "string", "description": "配方名;不传则列出全部"}},
+        },
+    },
+    {
         "name": "df_estimate_pipeline",
         "description": "流水线成本预估:漏斗重排后的顺序、朴素 vs 漏斗成本对比、预期留存。先估后跑",
         "inputSchema": {
@@ -123,12 +131,13 @@ TOOLS: list[dict] = [
     },
     {
         "name": "df_run_pipeline",
-        "description": "执行流水线(默认 native 引擎+漏斗编排;engine=datajuicer 时传 recipe 跑 DJ 配方)。需要 engineer 角色。默认等待完成并返回 manifest",
+        "description": "执行流水线(默认 native 引擎+漏斗编排;steps 手写或 recipe_name 用命名配方;engine=datajuicer 时传 recipe 跑 DJ 配方)。需要 engineer 角色。默认等待完成并返回 manifest",
         "inputSchema": {
             "type": "object",
             "properties": {
                 "dataset_id": {"type": "string"},
                 "steps": STEPS_SCHEMA,
+                "recipe_name": {"type": "string", "description": "命名配方(见 df_list_recipes),与 steps 二选一"},
                 "name": {"type": "string", "default": "run"},
                 "engine": {"type": "string", "enum": ["native", "datajuicer"], "default": "native"},
                 "recipe": {"type": "object", "description": "engine=datajuicer 时的 DJ 配方 {process:[...]}"},
@@ -163,6 +172,10 @@ def dispatch_tool(client: ApiClient, name: str, args: dict):
         return client.call("POST", f"/datasets/upload?name={q}", body=args["jsonl_text"], content_type="text/plain")
     if name == "df_inspect_dataset":
         return client.call("GET", f"/datasets/{args['dataset_id']}/head?n={int(args.get('n', 5))}")
+    if name == "df_list_recipes":
+        if args.get("name"):
+            return client.call("GET", f"/recipes/{urllib.parse.quote(args['name'])}")
+        return client.call("GET", "/recipes")
     if name == "df_estimate_pipeline":
         return client.call("POST", "/pipelines/estimate", body={"dataset_id": args["dataset_id"], "steps": args["steps"]})
     if name == "df_run_pipeline":
@@ -172,6 +185,7 @@ def dispatch_tool(client: ApiClient, name: str, args: dict):
             "engine": args.get("engine", "native"),
             "steps": args.get("steps", []),
             "recipe": args.get("recipe"),
+            "recipe_name": args.get("recipe_name"),
         }
         run = client.call("POST", "/runs", body=body)
         deadline = time.time() + int(args.get("wait_seconds", 120))

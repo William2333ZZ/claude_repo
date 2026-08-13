@@ -5,13 +5,16 @@
 > 可插拔引擎接入。平台本身是 **Claude Code 可驱动的 harness**——Agent 的能力严格等于其
 > API Key 对应用户的角色。
 
-本仓库包含：`datafoundry/` 平台代码（v0.1，43 例测试全绿）+ `docs/` 产品思考文档集。
+本仓库包含：`datafoundry/` 平台代码（v0.1，52 例测试全绿）+ `docs/` 产品思考文档集。
 
 ## 平台 v0.1 快速上手
 
 ```bash
 pip install -e .
 datafoundry demo          # 离线演示:脏数据 -> 漏斗流水线 -> 留存/死因报告
+
+datafoundry recipes       # 命名配方:简单算子的组合,每个带实验证据出处
+datafoundry refine --recipe math_zh_funnel_v1 --in data.jsonl   # 一条命令精炼:估成本->漏斗执行->报告
 
 datafoundry serve         # 起 HTTP API(默认 127.0.0.1:8321)
 # 首次: POST /auth/bootstrap 创建 admin(或 datafoundry create-user)
@@ -21,14 +24,14 @@ datafoundry login         # 设备授权登录(RFC 8628,同 feishu-cli/TapTap �
 datafoundry login --no-wait --json   # Agent 两段式:先拿 device_code,--device-code 续轮询
 datafoundry whoami && datafoundry logout   # 查身份 / 吊销 Key 并清凭据
 
-# 接入 Claude Code(8 个 MCP 工具:传数据/查算子/估成本/跑流水线/看死因):
+# 接入 Claude Code(9 个 MCP 工具:传数据/查算子/查配方/估成本/跑流水线/看死因):
 claude mcp add datafoundry \
   --env DATAFOUNDRY_URL=http://127.0.0.1:8321 \
   --env DATAFOUNDRY_API_KEY=dfk_xxx \
   -- datafoundry mcp
 ```
 
-已实现：自研算子引擎（过滤/改写/去重/验证/LLM 判审）、**漏斗编译器**（贵算子自动后置，演示场景省 46% 成本）、
+已实现：自研算子引擎（过滤/改写/去重/验证/LLM 判审）、**命名配方**（简单算子的组合即可售卖单元，CLI/API/MCP 三面可用，每个配方携带实验证据）、**漏斗编译器**（贵算子自动后置，演示场景省 46% 成本）、
 **逐样本血缘**（rejects 带死因，即审计凭证）、**RBAC 鉴权**（argon2-cffi + PyJWT 开源组件，三角色 + API Key + 审计日志）、
 Data-Juicer 开源引擎薄适配（可选安装）。详见 [docs/05-平台v0.1架构.md](docs/05-平台v0.1架构.md)。
 

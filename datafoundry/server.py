@@ -28,6 +28,7 @@ from datafoundry.billing import PLANS, billing_enabled, get_provider
 from datafoundry.engines import ENGINES, engine_status
 from datafoundry.pipeline import estimate as pipeline_estimate
 from datafoundry.pipeline import validate_steps
+from datafoundry.recipes import get_recipe, list_recipes, missing_requirements, recipe_steps
 from datafoundry.registry import catalog
 from datafoundry.runner import load_jsonl, run_pipeline
 from datafoundry.security import create_token, parse_token, role_rank
@@ -79,7 +80,8 @@ class RunBody(BaseModel):
     dataset_id: str
     engine: str = "native"
     steps: list[dict] = []
-    recipe: dict | None = None
+    recipe: dict | None = None  # engine=datajuicer 的引擎配方(DJ process 列表)
+    recipe_name: str | None = None  # native 引擎的命名配方(平台 recipes registry)
     funnel: bool = True
 
 
@@ -361,6 +363,17 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
     def list_engines(_: dict = Depends(require("viewer"))):
         return engine_status()
 
+    @app.get("/recipes")
+    def recipes_index(_: dict = Depends(require("viewer"))):
+        return list_recipes()
+
+    @app.get("/recipes/{name}")
+    def recipes_show(name: str, _: dict = Depends(require("viewer"))):
+        try:
+            return get_recipe(name)
+        except KeyError as exc:
+            raise HTTPException(404, str(exc.args[0]))
+
     @app.post("/pipelines/estimate")
     def estimate(body: EstimateBody, _: dict = Depends(require("viewer"))):
         ds = store.get_dataset(body.dataset_id)
@@ -465,6 +478,16 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
         if not ds:
             raise HTTPException(404, "无此数据集")
         if body.engine == "native":
+            if body.recipe_name:  # 命名配方展开为 steps,血缘/计费/漏斗与手写 steps 完全同路
+                if body.steps:
+                    raise HTTPException(400, "steps 与 recipe_name 二选一")
+                try:
+                    missing = missing_requirements(body.recipe_name)
+                    body.steps = recipe_steps(body.recipe_name)
+                except KeyError as exc:
+                    raise HTTPException(404, str(exc.args[0]))
+                if missing:
+                    raise HTTPException(400, f"配方前置未满足: {missing}(llm 需配置 DATAFOUNDRY_LLM_BASE/KEY/MODEL)")
             errors = validate_steps(body.steps)
             if errors:
                 raise HTTPException(400, "; ".join(errors))

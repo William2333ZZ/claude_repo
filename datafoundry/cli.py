@@ -193,6 +193,66 @@ def cmd_demo(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_recipes(args: argparse.Namespace) -> int:
+    """列出命名配方;带名字则显示完整定义(steps + 证据出处)。"""
+    import datafoundry.ops  # noqa: F401
+    from datafoundry.recipes import get_recipe, list_recipes, missing_requirements
+
+    if args.name:
+        try:
+            recipe = get_recipe(args.name)
+        except KeyError as exc:
+            print(exc.args[0], file=sys.stderr)
+            return 1
+        recipe["missing_requirements"] = missing_requirements(args.name)
+        print(json.dumps(recipe, ensure_ascii=False, indent=2))
+        return 0
+    for r in list_recipes():
+        req = f" [需 {','.join(r['requires'])}]" if r["requires"] else ""
+        print(f"{r['name']:<20} v{r['version']}  {r['title']}{req}")
+        print(f"{'':<20} 场景: {r['scenario']}")
+        print(f"{'':<20} 组合: {' -> '.join(r['ops'])}")
+    return 0
+
+
+def cmd_refine(args: argparse.Namespace) -> int:
+    """一条命令跑完一个配方:估成本 -> 漏斗执行 -> 报告。离线,不起服务不需账号。"""
+    import datafoundry.ops  # noqa: F401
+    from datafoundry.pipeline import estimate
+    from datafoundry.recipes import get_recipe, missing_requirements, recipe_steps
+    from datafoundry.runner import run_pipeline
+
+    try:
+        recipe = get_recipe(args.recipe)
+    except KeyError as exc:
+        print(exc.args[0], file=sys.stderr)
+        return 1
+    missing = missing_requirements(args.recipe)
+    if missing:
+        print(f"配方前置未满足: {missing}(llm 需配置 DATAFOUNDRY_LLM_BASE/KEY/MODEL)", file=sys.stderr)
+        return 1
+    src = Path(args.input)
+    if not src.exists():
+        print(f"输入不存在: {src}", file=sys.stderr)
+        return 1
+    steps = recipe_steps(args.recipe)
+    n_lines = sum(1 for line in src.open(encoding="utf-8") if line.strip())
+    est = estimate(steps, n_lines)
+    print(f"== 配方 {args.recipe} v{recipe['version']}:{recipe['title']} ==")
+    print(f"输入 {n_lines} 行;漏斗顺序: {' -> '.join(est['funnel_order'])}")
+    print(f"成本预估: 朴素 {est['est_cost_naive']} vs 漏斗 {est['est_cost_funnel']}(省 {est['est_savings']})")
+
+    out_dir = Path(args.out or tempfile.mkdtemp(prefix=f"datafoundry-{args.recipe}-"))
+    manifest = run_pipeline(src, steps, out_dir, text_key=args.text_key, funnel=not args.no_funnel)
+    print("\n== 运行结果 ==")
+    for op in manifest["per_op"]:
+        print(f"  {op['op']:<24} in={op['in']:>5} out={op['out']:>5} killed={op['killed']:>5} "
+              f"retention={op['retention']:.2f}")
+    print(f"\n总留存 {manifest['n_in']} -> {manifest['n_out']} ({manifest['retention']:.0%})")
+    print(f"产物: {manifest['output']}\n死因: {manifest['rejects']}")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="datafoundry", description="DataFoundry 数据精炼平台")
     parser.add_argument("--version", action="version", version=f"datafoundry {__version__}")
@@ -234,6 +294,18 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--out", default=None, help="输出目录(默认临时目录)")
     p.add_argument("--with-llm", action="store_true", help="包含 llm_judge_filter(需要 DATAFOUNDRY_LLM_* 配置)")
     p.set_defaults(func=cmd_demo)
+
+    p = sub.add_parser("recipes", help="列出命名配方(简单算子的组合+实验证据);带名字看完整定义")
+    p.add_argument("name", nargs="?", default=None)
+    p.set_defaults(func=cmd_recipes)
+
+    p = sub.add_parser("refine", help="一条命令跑配方:JSONL 进 -> 估成本 -> 漏斗执行 -> 报告(离线)")
+    p.add_argument("--recipe", required=True, help="配方名(见 datafoundry recipes)")
+    p.add_argument("--in", dest="input", required=True, help="输入 JSONL")
+    p.add_argument("--out", default=None, help="输出目录(默认临时目录)")
+    p.add_argument("--text-key", default="text", help="文本字段名(默认 text)")
+    p.add_argument("--no-funnel", action="store_true", help="按声明顺序执行,不做漏斗重排")
+    p.set_defaults(func=cmd_refine)
 
     args = parser.parse_args(argv)
     return args.func(args)
