@@ -397,7 +397,11 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
         except ValueError as exc:
             raise HTTPException(500, str(exc)) from None
         order = store.create_order(user["id"], plan, PLANS[plan], provider.name)
-        payment = provider.create_payment(order)
+        try:
+            payment = provider.create_payment(order)
+        except Exception as exc:  # 网关侧失败必须把原因透出(如支付宝"应用未上线"/密钥错误)
+            store.audit(user["username"], "billing_order_fail", f"{order['id']} {exc!s:.200}")
+            raise HTTPException(502, f"支付网关下单失败: {exc}") from None
         if payment.get("provider_ref"):
             store.set_order_ref(order["id"], payment["provider_ref"])
         store.audit(user["username"], "billing_order", f"{order['id']} {plan}")
