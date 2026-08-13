@@ -67,6 +67,27 @@ CREATE TABLE IF NOT EXISTS audit (
     action TEXT NOT NULL,
     detail TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS orders (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    plan TEXT NOT NULL,
+    credits INTEGER NOT NULL,
+    amount_cents INTEGER NOT NULL,
+    currency TEXT NOT NULL,
+    provider TEXT NOT NULL,
+    provider_ref TEXT,
+    status TEXT NOT NULL DEFAULT 'pending',
+    created_at REAL NOT NULL,
+    paid_at REAL
+);
+CREATE TABLE IF NOT EXISTS credit_ledger (
+    id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    delta INTEGER NOT NULL,
+    reason TEXT NOT NULL,
+    order_id TEXT,
+    ts REAL NOT NULL
+);
 CREATE TABLE IF NOT EXISTS device_codes (
     id INTEGER PRIMARY KEY,
     device_hash TEXT UNIQUE NOT NULL,
@@ -186,6 +207,57 @@ class Store:
     def revoke_api_key(self, user_id: int, key_id: int) -> bool:
         cur = self._exec("UPDATE api_keys SET revoked=1 WHERE id=? AND user_id=?", (key_id, user_id))
         return cur.rowcount > 0
+
+    # ---------- 计费:订单与额度账本(额度事实源在内核) ----------
+
+    def create_order(self, user_id: int, plan: str, plan_def: dict, provider: str) -> dict:
+        order_id = "ord_" + secrets.token_hex(8)
+        self._exec(
+            "INSERT INTO orders(id, user_id, plan, credits, amount_cents, currency, provider, created_at) "
+            "VALUES(?,?,?,?,?,?,?,?)",
+            (order_id, user_id, plan, plan_def["credits"], plan_def["amount_cents"],
+             plan_def["currency"], provider, time.time()),
+        )
+        return self.get_order(order_id)
+
+    def get_order(self, order_id: str) -> dict | None:
+        rows = self._query("SELECT * FROM orders WHERE id=?", (order_id,))
+        return dict(rows[0]) if rows else None
+
+    def set_order_ref(self, order_id: str, provider_ref: str) -> None:
+        self._exec("UPDATE orders SET provider_ref=? WHERE id=?", (provider_ref, order_id))
+
+    def mark_order_paid(self, order_id: str) -> dict | None:
+        """幂等:重复回调只记账一次。成功返回订单,已支付/不存在返回 None。"""
+        with self._lock:
+            cur = self._db.execute(
+                "UPDATE orders SET status='paid', paid_at=? WHERE id=? AND status='pending'",
+                (time.time(), order_id),
+            )
+            if cur.rowcount == 0:
+                self._db.commit()
+                return None
+            row = self._db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
+            self._db.execute(
+                "INSERT INTO credit_ledger(user_id, delta, reason, order_id, ts) VALUES(?,?,?,?,?)",
+                (row["user_id"], row["credits"], f"purchase:{row['plan']}", order_id, time.time()),
+            )
+            self._db.commit()
+            return dict(row)
+
+    def add_credits(self, user_id: int, delta: int, reason: str, order_id: str | None = None) -> None:
+        self._exec(
+            "INSERT INTO credit_ledger(user_id, delta, reason, order_id, ts) VALUES(?,?,?,?,?)",
+            (user_id, delta, reason, order_id, time.time()),
+        )
+
+    def credit_balance(self, user_id: int) -> int:
+        rows = self._query("SELECT COALESCE(SUM(delta),0) AS bal FROM credit_ledger WHERE user_id=?", (user_id,))
+        return int(rows[0]["bal"])
+
+    def list_orders(self, user_id: int) -> list[dict]:
+        return [dict(r) for r in self._query(
+            "SELECT * FROM orders WHERE user_id=? ORDER BY created_at DESC", (user_id,))]
 
     # ---------- 设备授权(RFC 8628 风格,feishu-cli / taptap 同款流程) ----------
 

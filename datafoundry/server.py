@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 import datafoundry.ops  # noqa: F401  导入即注册内置算子
 from datafoundry import __version__
+from datafoundry.billing import PLANS, billing_enabled, get_provider
 from datafoundry.engines import ENGINES, engine_status
 from datafoundry.pipeline import estimate as pipeline_estimate
 from datafoundry.pipeline import validate_steps
@@ -330,6 +331,72 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
             raise HTTPException(400, "; ".join(errors))
         return pipeline_estimate(body.steps, ds["n_samples"])
 
+    # ---------- 计费(默认关闭:不设 DATAFOUNDRY_BILLING_PROVIDER 则平台行为不变) ----------
+
+    def require_billing():
+        if not billing_enabled():
+            raise HTTPException(404, "计费未启用:设 DATAFOUNDRY_BILLING_PROVIDER=mock|stripe|wechatpay|alipay")
+
+    @app.get("/billing/plans")
+    def billing_plans(_: dict = Depends(require("viewer"))):
+        require_billing()
+        return PLANS
+
+    @app.get("/billing/me")
+    def billing_me(user: dict = Depends(require("viewer"))):
+        require_billing()
+        return {"balance": store.credit_balance(user["id"]), "orders": store.list_orders(user["id"])}
+
+    @app.post("/billing/orders")
+    def billing_create_order(plan: str = Query(), user: dict = Depends(require("engineer"))):
+        require_billing()
+        if plan not in PLANS:
+            raise HTTPException(400, f"未知套餐 {plan}(可用: {sorted(PLANS)})")
+        try:
+            provider = get_provider()
+        except ValueError as exc:
+            raise HTTPException(500, str(exc)) from None
+        order = store.create_order(user["id"], plan, PLANS[plan], provider.name)
+        payment = provider.create_payment(order)
+        if payment.get("provider_ref"):
+            store.set_order_ref(order["id"], payment["provider_ref"])
+        store.audit(user["username"], "billing_order", f"{order['id']} {plan}")
+        return {"order": order, "payment": payment}
+
+    @app.post("/billing/webhook")
+    async def billing_webhook(request: Request):
+        require_billing()
+        try:
+            provider = get_provider()
+        except ValueError as exc:
+            raise HTTPException(500, str(exc)) from None
+        body = await request.body()
+        headers = {k.lower(): v for k, v in request.headers.items()}
+        event = provider.parse_webhook(headers, body)
+        if not event:
+            raise HTTPException(400, "回调验签失败或事件不相关")
+        order = store.mark_order_paid(event["order_id"])  # 幂等
+        if order:
+            store.audit("webhook", "billing_paid", f"{order['id']} +{order['credits']} credits")
+            return {"credited": order["credits"], "order_id": order["id"]}
+        return {"note": "订单不存在或已处理(幂等)"}
+
+    @app.post("/billing/grant")
+    def billing_grant(
+        username: str = Query(),
+        credits: int = Query(gt=0),
+        reason: str = Query(default="manual"),
+        admin: dict = Depends(require("admin")),
+    ):
+        """线下收款(对公转账/PoC 合同)后的手工上账通道——B2B 现实路径。"""
+        require_billing()
+        target = next((u for u in store.list_users() if u["username"] == username), None)
+        if not target:
+            raise HTTPException(404, f"无此用户: {username}")
+        store.add_credits(target["id"], credits, f"grant:{reason}")
+        store.audit(admin["username"], "billing_grant", f"{username} +{credits} ({reason})")
+        return {"username": username, "balance": store.credit_balance(target["id"])}
+
     # ---------- 运行 ----------
 
     def _execute(run_id: str, body: RunBody, ds: dict) -> None:
@@ -358,7 +425,15 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
                 raise HTTPException(400, reason)
         else:
             raise HTTPException(400, f"未知引擎 {body.engine}(可用: native, {', '.join(ENGINES)})")
+        if billing_enabled() and role_rank(user["role"]) < role_rank("admin"):
+            balance = store.credit_balance(user["id"])
+            if balance < ds["n_samples"]:
+                raise HTTPException(
+                    402, f"额度不足:本次需 {ds['n_samples']},余额 {balance}。请购买套餐或联系管理员上账"
+                )
         run = store.create_run(body.name, body.dataset_id, body.steps, user["username"])
+        if billing_enabled() and role_rank(user["role"]) < role_rank("admin"):
+            store.add_credits(user["id"], -ds["n_samples"], f"run:{run['id']}")
         store.audit(user["username"], "create_run", f"{run['id']} engine={body.engine} ds={body.dataset_id}")
         store.set_run_status(run["id"], "running")
         threading.Thread(target=_execute, args=(run["id"], body, ds), daemon=True).start()
