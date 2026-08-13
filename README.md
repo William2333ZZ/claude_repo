@@ -91,6 +91,7 @@ flowchart LR
 | [docs/06-CLI登录流程调研与实现.md](docs/06-CLI登录流程调研与实现.md) | **CLI 登录**：feishu-cli / TapTap 登录流程调研（设备授权流 RFC 8628），DataFoundry `login/whoami/logout` 实现与烟测记录 |
 | [docs/07-五分钟试驾.md](docs/07-五分钟试驾.md) | **试驾指南**：从克隆到登录到跑流水线的完整实测步骤（已在干净环境验证） |
 | [docs/08-项目管理与事项拆解.md](docs/08-项目管理与事项拆解.md) | **项目管理**：M1–M3 三级 WBS、验收标准、硬门禁与转向预案；M1 事项已建为 [GitHub Issues](https://github.com/William2333ZZ/claude_repo/issues)（#8 为总览看板） |
+| [docs/09-团队分工与角色.md](docs/09-团队分工与角色.md) | **团队分工**：产品/算法/平台/商业四域 + AI 执行单元；每事项 Owner×Exec 归属、域间接口、1→5 人的帽子分配 |
 
 ---
 
