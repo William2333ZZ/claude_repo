@@ -129,6 +129,46 @@ def create_app(store: Store | None = None) -> FastAPI:
 
     # ---------- 健康与引导 ----------
 
+    _LANDING = """<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DataFoundry 数据精炼平台</title><style>
+:root{--bg:#F6F7F9;--card:#fff;--ink:#1B2430;--muted:#5C6672;--line:#E2E6EB;--accent:#6741D9}
+@media (prefers-color-scheme:dark){:root{--bg:#12161C;--card:#1A202A;--ink:#E8ECF1;--muted:#98A2B0;--line:#2A323E;--accent:#9775FA}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);
+font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;line-height:1.8}
+.wrap{max-width:44rem;margin:0 auto;padding:4rem 1.5rem 5rem;text-align:center}
+.logo{width:96px;height:96px;border-radius:22px;background:#1B2430;display:inline-flex;align-items:center;justify-content:center}
+h1{font-size:2rem;margin:1.2rem 0 .4rem;font-weight:800}
+.tag{color:var(--muted);font-size:1.05rem;margin:0 0 2.2rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.8rem;margin:0 0 2.4rem;text-align:left}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:1rem 1.1rem}
+.card b{display:block;margin-bottom:.2rem}.card span{font-size:.88rem;color:var(--muted)}
+.cta{display:inline-block;margin:.3rem .4rem;padding:.6rem 1.4rem;border-radius:8px;text-decoration:none;font-size:.95rem}
+.p{background:var(--accent);color:#fff}.s{border:1px solid var(--line);color:var(--ink)}
+footer{margin-top:3rem;font-size:.8rem;color:var(--muted)}
+</style></head><body><div class="wrap">
+<div class="logo"><svg width="64" height="64" viewBox="0 0 1024 1024">
+<g fill="#8A94A6"><rect x="330" y="168" width="52" height="52" rx="10" transform="rotate(-14 356 194)"/>
+<circle cx="516" cy="152" r="27"/><path d="M668 150 L700 206 L636 206 Z"/></g>
+<path d="M268 316 L756 316 L546 574 L546 668 L478 668 L478 574 Z" fill="#fff" stroke="#fff" stroke-width="26" stroke-linejoin="round"/>
+<path d="M512 726 C542 766 574 800 574 836 A62 62 0 1 1 450 836 C450 800 482 766 512 726 Z" fill="#9775FA"/></svg></div>
+<h1>DataFoundry 数据精炼平台</h1>
+<p class="tag">面向 AI 团队:清洗、去重、验证与合成训练数据,让同样的算力预算换来更高的评测分数。</p>
+<div class="grid">
+<div class="card"><b>漏斗编排</b><span>便宜算子先杀掉九成噪声,昂贵判审只看幸存者,成本预估先行</span></div>
+<div class="card"><b>硬验证器</b><span>答案核验等验证算子,实测对错误样本零放行、对干净样本零误杀</span></div>
+<div class="card"><b>全程血缘</b><span>每条样本的去留与死因可追溯,产出即审计凭证</span></div>
+<div class="card"><b>评测回流</b><span>数据训练后的评测分数写回产线,质量闭环可归因</span></div>
+</div>
+<a class="cta p" href="/device">登录 / 设备授权</a>
+<a class="cta s" href="/docs">API 文档</a>
+<footer>按数据处理量计费 · 开源内核(Apache-2.0)· © 2026 DataFoundry</footer>
+</div></body></html>"""
+
+    @app.get("/", response_class=HTMLResponse)
+    def landing():
+        return _LANDING
+
     @app.get("/health")
     def health():
         return {"ok": True, "version": __version__, "engines": engine_status()}
