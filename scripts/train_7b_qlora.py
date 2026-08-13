@@ -57,26 +57,31 @@ def main() -> int:
                               BitsAndBytesConfig, Trainer, TrainingArguments, set_seed)
 
     set_seed(SEED)
-    bf16_ok = torch.cuda.is_available() and torch.cuda.is_bf16_supported()
+    bf16_ok = torch.cuda.is_available() and torch.cuda.get_device_capability() >= (8, 0)
     compute_dtype = torch.bfloat16 if bf16_ok else torch.float16
     HPARAMS["bf16" if bf16_ok else "fp16"] = True
     cap = torch.cuda.get_device_capability() if torch.cuda.is_available() else (0, 0)
-    print(f"GPU capability={cap} bf16={bf16_ok} compute_dtype={compute_dtype}")
-    if cap and cap < (7, 0):
-        sys.exit(f"GPU sm_{cap[0]}{cap[1]} 低于 bitsandbytes 4bit 最低要求 sm_70:请换 T4/更新架构")
+    use_4bit = not cap or cap >= (7, 0)
+    print(f"GPU capability={cap} bf16={bf16_ok} compute_dtype={compute_dtype} 4bit={use_4bit}")
+    if not use_4bit:
+        print(f"GPU sm_{cap[0]}{cap[1]} 不支持 bitsandbytes 4bit:走无量化 fp16 路径(建议 ≤3B 模型)")
     out = pathlib.Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
 
     tok = AutoTokenizer.from_pretrained(MODEL)
-    bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                             bnb_4bit_compute_dtype=compute_dtype, bnb_4bit_use_double_quant=True)
-    model = AutoModelForCausalLM.from_pretrained(MODEL, quantization_config=bnb, device_map="auto")
+    if use_4bit:
+        bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
+                                 bnb_4bit_compute_dtype=compute_dtype, bnb_4bit_use_double_quant=True)
+        model = AutoModelForCausalLM.from_pretrained(MODEL, quantization_config=bnb, device_map="auto")
+    else:
+        model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=compute_dtype, device_map="auto")
 
     t0 = time.time()
     if not args.skip_train:
         pairs = load_pairs(pathlib.Path(args.data))
         print(f"train pairs: {len(pairs)} (cap {TRAIN_CAP}) | seed={SEED} | model={MODEL}")
-        model = prepare_model_for_kbit_training(model)
+        if use_4bit:
+            model = prepare_model_for_kbit_training(model)
         lora = LoraConfig(r=8, lora_alpha=16, lora_dropout=0.05, task_type="CAUSAL_LM",
                           target_modules=["q_proj", "k_proj", "v_proj", "o_proj"])
         model = get_peft_model(model, lora)

@@ -17,6 +17,10 @@ on:
         description: "训练种子"
         default: "42"
         required: true
+      model:
+        description: "底座模型(P100 用 3B,T4+ 可 7B)"
+        default: "Qwen/Qwen2.5-3B-Instruct"
+        required: true
 
 jobs:
   push-kernel:
@@ -35,7 +39,8 @@ jobs:
       - name: Compose kernel
         run: |
           mkdir -p kernel
-          SLUG="df-7b-$(echo '${{ inputs.arm }}' | tr '_' '-')-s${{ inputs.seed }}"
+          MTAG=$(echo '${{ inputs.model }}' | sed 's|.*/||; s|[^A-Za-z0-9]|-|g' | tr 'A-Z' 'a-z' | cut -c1-20)
+          SLUG="df-$MTAG-$(echo '${{ inputs.arm }}' | tr '_' '-')-s${{ inputs.seed }}"
           echo "SLUG=$SLUG" >> $GITHUB_ENV
           cat > kernel/kernel-metadata.json <<EOF
           {
@@ -58,12 +63,18 @@ jobs:
           BRANCH = "claude/nemo-data-juicer-dataflow-integration-7ozc7z"
           ARM = "__ARM__"
           SEED = "__SEED__"
+          MODEL = "__MODEL__"
           run = lambda c: subprocess.run(c, shell=True, check=True)
           run(f"git clone --depth 1 -b {BRANCH} https://github.com/William2333ZZ/claude_repo.git repo")
           os.chdir("repo")
+          import torch
+          cap = torch.cuda.get_device_capability() if torch.cuda.is_available() else (0, 0)
+          print("GPU capability:", cap)
+          if cap and cap < (7, 0):  # P100 等 Pascal:预装 torch 不支持 sm_60,降级 cu118 版
+              run("pip install --quiet 'torch==2.4.1' --index-url https://download.pytorch.org/whl/cu118")
           run("pip install --quiet -e . 'peft>=0.12' bitsandbytes accelerate")
           run("python experiments/m1_c1/generate_corpus.py")
-          env = {**os.environ, "TRAIN_SEED": SEED}
+          env = {**os.environ, "TRAIN_SEED": SEED, "TRAIN_MODEL": MODEL}
           if ARM == "baseline":
               subprocess.run([sys.executable, "scripts/train_7b_qlora.py", "--skip-train",
                               "--data", "evalsets/math_zh_v1.jsonl", "--out", "/kaggle/working/result"],
@@ -76,7 +87,7 @@ jobs:
           run("cp /kaggle/working/result/eval_report.json /kaggle/working/")
           print("KERNEL_DONE")
           EOF
-          sed -i "s/__ARM__/${{ inputs.arm }}/; s/__SEED__/${{ inputs.seed }}/" kernel/run.py
+          sed -i "s/__ARM__/${{ inputs.arm }}/; s/__SEED__/${{ inputs.seed }}/; s|__MODEL__|${{ inputs.model }}|" kernel/run.py
       - name: Push kernel to Kaggle GPU
         env:
           KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
