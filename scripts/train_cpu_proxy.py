@@ -15,12 +15,14 @@ import random
 import sys
 import time
 
+import os as _os
+
 MODEL = "Qwen/Qwen2.5-0.5B-Instruct"
 TRAIN_CAP = 1000       # 组间一致的采样上限(CPU 时间预算)
 MAX_LEN = 320
 EPOCHS = 2
 LR = 2e-4
-SEED = 42
+SEED = int(_os.environ.get("TRAIN_SEED", "42"))  # 种子复验用 TRAIN_SEED 覆盖,其余超参不动
 EVAL_MAX_NEW = 220
 
 

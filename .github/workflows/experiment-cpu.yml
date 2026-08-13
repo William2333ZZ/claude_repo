@@ -11,6 +11,10 @@ on:
         description: "逗号分隔的组名"
         default: "arm1_heuristic,arm3_scorer,arm4a_funnel_verify"
         required: true
+      seed:
+        description: "训练种子(复验用)"
+        default: "42"
+        required: true
 
 jobs:
   train-eval:
@@ -35,6 +39,8 @@ jobs:
           python experiments/m1_c1/generate_corpus.py
           python experiments/m1_c1/run_arm.py --arm ${{ matrix.arm }}
       - name: Train + eval (0.5B LoRA, CPU)
+        env:
+          TRAIN_SEED: ${{ inputs.seed }}
         run: |
           python scripts/train_cpu_proxy.py \
             --data experiments/m1_c1/results/${{ matrix.arm }}/output.jsonl \
