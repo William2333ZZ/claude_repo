@@ -315,6 +315,19 @@ class Store:
         row["manifest"] = json.loads(mj) if mj else None
         return row
 
+    def set_run_eval(self, run_id: str, eval_block: dict) -> bool:
+        """[M1-A3] 评测分数写回 run:merge 进 manifest 的 eval 区块,闭环在此接通。"""
+        run = self.get_run(run_id)
+        if not run:
+            return False
+        manifest = run.get("manifest") or {}
+        manifest["eval"] = eval_block
+        self._exec(
+            "UPDATE runs SET manifest_json=? WHERE id=?",
+            (json.dumps(manifest, ensure_ascii=False), run_id),
+        )
+        return True
+
     def list_runs(self) -> list[dict]:
         return [
             dict(r)

@@ -53,6 +53,13 @@ class EstimateBody(BaseModel):
     steps: list[dict]
 
 
+class EvalBody(BaseModel):
+    accuracy: float
+    evalset: str
+    train_fingerprint: str = ""
+    details: dict = {}
+
+
 class DeviceStartBody(BaseModel):
     label: str = "cli"
 
@@ -367,6 +374,20 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
         if not run:
             raise HTTPException(404, "无此运行")
         return run
+
+    @app.post("/runs/{run_id}/eval")
+    def set_run_eval(run_id: str, body: EvalBody, user: dict = Depends(require("engineer"))):
+        block = {
+            "accuracy": body.accuracy,
+            "evalset": body.evalset,
+            "train_fingerprint": body.train_fingerprint,
+            "details": body.details,
+            "recorded_by": user["username"],
+        }
+        if not store.set_run_eval(run_id, block):
+            raise HTTPException(404, "无此运行")
+        store.audit(user["username"], "set_run_eval", f"{run_id} {body.evalset}={body.accuracy}")
+        return {"run_id": run_id, "eval": block}
 
     @app.get("/runs/{run_id}/rejects")
     def run_rejects(run_id: str, n: int = Query(default=10, ge=1, le=100), _: dict = Depends(require("viewer"))):

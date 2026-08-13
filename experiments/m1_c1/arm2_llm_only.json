@@ -1,0 +1,9 @@
+{
+  "name": "arm2_llm_only",
+  "hypothesis": "全量 LLM 判审:语义强,但全量过贵且无硬验证",
+  "steps": [
+    {"op": "whitespace_normalize"},
+    {"op": "exact_dedup"},
+    {"op": "llm_judge_filter", "params": {"criteria": "数学题目清晰、解答步骤正确、答案与推理一致", "min_score": 4}}
+  ]
+}

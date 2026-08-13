@@ -2,9 +2,10 @@
 
 每个算子声明:
   kind          : filter(判死) | mapper(改写) | score(打分) | dedup(语料级去重) | verify(硬验证)
+                  | expand(1→N 扩增:分块/合成,子样本挂父血缘)
   cost_tier     : heuristic | model | llm  —— 漏斗编译器按此排序
   cost_per_1k   : 每千样本成本(抽象单位,默认按人民币元的量级标定)
-  expected_retention : 预期留存率(0-1],成本预估用;mapper/score 恒为 1
+  expected_retention : 预期产出倍率;filter 为留存率(0-1],expand 可 >1(每样本产 N 条)
 """
 from __future__ import annotations
 
@@ -34,6 +35,11 @@ class Op(ABC):
         """语料级算子(去重)覆写此方法;默认逐条。yield None 表示该样本被 kill。"""
         for s in samples:
             yield self.process(s)
+
+    def expand(self, sample: dict) -> list[dict]:
+        """kind=="expand" 的算子覆写:一条父样本产出 N 条子样本(可为空,空则父样本进 rejects)。
+        子样本须带 meta.parent_id 与继承的 trace,保证血缘可回溯。"""
+        raise NotImplementedError(f"{self.name} 未实现 expand")
 
     @classmethod
     def spec(cls) -> dict:

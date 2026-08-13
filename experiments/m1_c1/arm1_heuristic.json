@@ -1,0 +1,12 @@
+{
+  "name": "arm1_heuristic",
+  "hypothesis": "规则清洗+去重:便宜,但无法识别内容错误",
+  "steps": [
+    {"op": "whitespace_normalize"},
+    {"op": "length_filter", "params": {"min_len": 20}},
+    {"op": "symbol_ratio_filter"},
+    {"op": "repetition_filter"},
+    {"op": "exact_dedup"},
+    {"op": "minhash_dedup"}
+  ]
+}

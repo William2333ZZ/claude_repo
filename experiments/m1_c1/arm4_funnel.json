@@ -1,0 +1,14 @@
+{
+  "name": "arm4_funnel",
+  "hypothesis": "漏斗混合(平台主张):启发式先杀 -> 硬验证保真 -> LLM 判审只看幸存者;同预算更高分",
+  "steps": [
+    {"op": "whitespace_normalize"},
+    {"op": "length_filter", "params": {"min_len": 20}},
+    {"op": "symbol_ratio_filter"},
+    {"op": "repetition_filter"},
+    {"op": "exact_dedup"},
+    {"op": "minhash_dedup"},
+    {"op": "math_answer_verify", "params": {"reference_key": "reference"}},
+    {"op": "llm_judge_filter", "params": {"criteria": "数学题目清晰、解答步骤正确、答案与推理一致", "min_score": 3}}
+  ]
+}

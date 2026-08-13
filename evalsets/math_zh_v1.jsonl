@@ -1,0 +1,60 @@
+{"id": "math_zh_v1-change-1", "template": "change", "question": "小明买了 3 本单价 3 元的笔记本,付给店员 20 元。店员应找零多少元?", "answer": 11}
+{"id": "math_zh_v1-change-2", "template": "change", "question": "小明买了 8 本单价 4 元的笔记本,付给店员 42 元。店员应找零多少元?", "answer": 10}
+{"id": "math_zh_v1-change-3", "template": "change", "question": "小明买了 5 本单价 8 元的笔记本,付给店员 43 元。店员应找零多少元?", "answer": 3}
+{"id": "math_zh_v1-change-4", "template": "change", "question": "小明买了 5 本单价 6 元的笔记本,付给店员 34 元。店员应找零多少元?", "answer": 4}
+{"id": "math_zh_v1-change-5", "template": "change", "question": "小明买了 5 本单价 7 元的笔记本,付给店员 54 元。店员应找零多少元?", "answer": 19}
+{"id": "math_zh_v1-distance-1", "template": "distance", "question": "一辆汽车以每小时 60 千米的速度匀速行驶了 2 小时,共行驶了多少千米?", "answer": 120}
+{"id": "math_zh_v1-distance-2", "template": "distance", "question": "一辆汽车以每小时 90 千米的速度匀速行驶了 3 小时,共行驶了多少千米?", "answer": 270}
+{"id": "math_zh_v1-distance-3", "template": "distance", "question": "一辆汽车以每小时 40 千米的速度匀速行驶了 6 小时,共行驶了多少千米?", "answer": 240}
+{"id": "math_zh_v1-distance-4", "template": "distance", "question": "一辆汽车以每小时 72 千米的速度匀速行驶了 4 小时,共行驶了多少千米?", "answer": 288}
+{"id": "math_zh_v1-distance-5", "template": "distance", "question": "一辆汽车以每小时 40 千米的速度匀速行驶了 5 小时,共行驶了多少千米?", "answer": 200}
+{"id": "math_zh_v1-discount-1", "template": "discount", "question": "一件原价 480 元的外套按8折出售,现价是多少元?", "answer": 384}
+{"id": "math_zh_v1-discount-2", "template": "discount", "question": "一件原价 120 元的外套按6折出售,现价是多少元?", "answer": 72}
+{"id": "math_zh_v1-discount-3", "template": "discount", "question": "一件原价 300 元的外套按9折出售,现价是多少元?", "answer": 270}
+{"id": "math_zh_v1-discount-4", "template": "discount", "question": "一件原价 250 元的外套按6折出售,现价是多少元?", "answer": 150}
+{"id": "math_zh_v1-discount-5", "template": "discount", "question": "一件原价 250 元的外套按9折出售,现价是多少元?", "answer": 225}
+{"id": "math_zh_v1-average-1", "template": "average", "question": "小红四次数学测验的成绩分别是 79、83、80、86 分,平均分是多少分?", "answer": 82}
+{"id": "math_zh_v1-average-2", "template": "average", "question": "小红四次数学测验的成绩分别是 75、79、76、82 分,平均分是多少分?", "answer": 78}
+{"id": "math_zh_v1-average-3", "template": "average", "question": "小红四次数学测验的成绩分别是 77、81、78、84 分,平均分是多少分?", "answer": 80}
+{"id": "math_zh_v1-average-4", "template": "average", "question": "小红四次数学测验的成绩分别是 62、66、63、69 分,平均分是多少分?", "answer": 65}
+{"id": "math_zh_v1-average-5", "template": "average", "question": "小红四次数学测验的成绩分别是 82、86、83、89 分,平均分是多少分?", "answer": 85}
+{"id": "math_zh_v1-cowork-1", "template": "cowork", "question": "一项工程,甲单独做需要 12 天完成,乙单独做需要 4 天完成。两人合作需要多少天完成?", "answer": 3}
+{"id": "math_zh_v1-cowork-2", "template": "cowork", "question": "一项工程,甲单独做需要 8 天完成,乙单独做需要 8 天完成。两人合作需要多少天完成?", "answer": 4}
+{"id": "math_zh_v1-cowork-3", "template": "cowork", "question": "一项工程,甲单独做需要 30 天完成,乙单独做需要 6 天完成。两人合作需要多少天完成?", "answer": 5}
+{"id": "math_zh_v1-cowork-4", "template": "cowork", "question": "一项工程,甲单独做需要 10 天完成,乙单独做需要 10 天完成。两人合作需要多少天完成?", "answer": 5}
+{"id": "math_zh_v1-cowork-5", "template": "cowork", "question": "一项工程,甲单独做需要 6 天完成,乙单独做需要 3 天完成。两人合作需要多少天完成?", "answer": 2}
+{"id": "math_zh_v1-age-1", "template": "age", "question": "今年父亲的年龄是小华的 6 倍,两人年龄之和是 84 岁。小华今年多少岁?", "answer": 12}
+{"id": "math_zh_v1-age-2", "template": "age", "question": "今年父亲的年龄是小华的 6 倍,两人年龄之和是 70 岁。小华今年多少岁?", "answer": 10}
+{"id": "math_zh_v1-age-3", "template": "age", "question": "今年父亲的年龄是小华的 5 倍,两人年龄之和是 48 岁。小华今年多少岁?", "answer": 8}
+{"id": "math_zh_v1-age-4", "template": "age", "question": "今年父亲的年龄是小华的 3 倍,两人年龄之和是 44 岁。小华今年多少岁?", "answer": 11}
+{"id": "math_zh_v1-age-5", "template": "age", "question": "今年父亲的年龄是小华的 4 倍,两人年龄之和是 50 岁。小华今年多少岁?", "answer": 10}
+{"id": "math_zh_v1-chicken_rabbit-1", "template": "chicken_rabbit", "question": "笼子里有若干只鸡和兔,从上面数有 11 个头,从下面数有 28 只脚。兔有多少只?", "answer": 3}
+{"id": "math_zh_v1-chicken_rabbit-2", "template": "chicken_rabbit", "question": "笼子里有若干只鸡和兔,从上面数有 10 个头,从下面数有 32 只脚。兔有多少只?", "answer": 6}
+{"id": "math_zh_v1-chicken_rabbit-3", "template": "chicken_rabbit", "question": "笼子里有若干只鸡和兔,从上面数有 7 个头,从下面数有 22 只脚。兔有多少只?", "answer": 4}
+{"id": "math_zh_v1-chicken_rabbit-4", "template": "chicken_rabbit", "question": "笼子里有若干只鸡和兔,从上面数有 23 个头,从下面数有 68 只脚。兔有多少只?", "answer": 11}
+{"id": "math_zh_v1-chicken_rabbit-5", "template": "chicken_rabbit", "question": "笼子里有若干只鸡和兔,从上面数有 7 个头,从下面数有 20 只脚。兔有多少只?", "answer": 3}
+{"id": "math_zh_v1-fill_pool-1", "template": "fill_pool", "question": "一个水池同时打开进水管和排水管,进水管每小时进水 14 升,排水管每小时排水 8 升。要注满 36 升的水池需要多少小时?", "answer": 6}
+{"id": "math_zh_v1-fill_pool-2", "template": "fill_pool", "question": "一个水池同时打开进水管和排水管,进水管每小时进水 8 升,排水管每小时排水 3 升。要注满 20 升的水池需要多少小时?", "answer": 4}
+{"id": "math_zh_v1-fill_pool-3", "template": "fill_pool", "question": "一个水池同时打开进水管和排水管,进水管每小时进水 6 升,排水管每小时排水 3 升。要注满 24 升的水池需要多少小时?", "answer": 8}
+{"id": "math_zh_v1-fill_pool-4", "template": "fill_pool", "question": "一个水池同时打开进水管和排水管,进水管每小时进水 6 升,排水管每小时排水 4 升。要注满 8 升的水池需要多少小时?", "answer": 4}
+{"id": "math_zh_v1-fill_pool-5", "template": "fill_pool", "question": "一个水池同时打开进水管和排水管,进水管每小时进水 9 升,排水管每小时排水 5 升。要注满 12 升的水池需要多少小时?", "answer": 3}
+{"id": "math_zh_v1-ratio_share-1", "template": "ratio_share", "question": "把 24 颗糖按 1:3 分给甲、乙两人,分得多的一人得到多少颗?", "answer": 18}
+{"id": "math_zh_v1-ratio_share-2", "template": "ratio_share", "question": "把 105 颗糖按 3:4 分给甲、乙两人,分得多的一人得到多少颗?", "answer": 60}
+{"id": "math_zh_v1-ratio_share-3", "template": "ratio_share", "question": "把 28 颗糖按 1:3 分给甲、乙两人,分得多的一人得到多少颗?", "answer": 21}
+{"id": "math_zh_v1-ratio_share-4", "template": "ratio_share", "question": "把 98 颗糖按 3:4 分给甲、乙两人,分得多的一人得到多少颗?", "answer": 56}
+{"id": "math_zh_v1-ratio_share-5", "template": "ratio_share", "question": "把 133 颗糖按 2:5 分给甲、乙两人,分得多的一人得到多少颗?", "answer": 95}
+{"id": "math_zh_v1-profit-1", "template": "profit", "question": "一件商品进价 50 元,售价 70 元,利润率是百分之多少?(只答数字)", "answer": 40}
+{"id": "math_zh_v1-profit-2", "template": "profit", "question": "一件商品进价 200 元,售价 230 元,利润率是百分之多少?(只答数字)", "answer": 15}
+{"id": "math_zh_v1-profit-3", "template": "profit", "question": "一件商品进价 400 元,售价 520 元,利润率是百分之多少?(只答数字)", "answer": 30}
+{"id": "math_zh_v1-profit-4", "template": "profit", "question": "一件商品进价 50 元,售价 55 元,利润率是百分之多少?(只答数字)", "answer": 10}
+{"id": "math_zh_v1-profit-5", "template": "profit", "question": "一件商品进价 100 元,售价 125 元,利润率是百分之多少?(只答数字)", "answer": 25}
+{"id": "math_zh_v1-arith_sum-1", "template": "arith_sum", "question": "一个等差数列首项是 2,公差是 4,前 7 项的和是多少?", "answer": 98}
+{"id": "math_zh_v1-arith_sum-2", "template": "arith_sum", "question": "一个等差数列首项是 6,公差是 2,前 8 项的和是多少?", "answer": 104}
+{"id": "math_zh_v1-arith_sum-3", "template": "arith_sum", "question": "一个等差数列首项是 6,公差是 4,前 10 项的和是多少?", "answer": 240}
+{"id": "math_zh_v1-arith_sum-4", "template": "arith_sum", "question": "一个等差数列首项是 8,公差是 4,前 10 项的和是多少?", "answer": 260}
+{"id": "math_zh_v1-arith_sum-5", "template": "arith_sum", "question": "一个等差数列首项是 2,公差是 4,前 5 项的和是多少?", "answer": 50}
+{"id": "math_zh_v1-trees-1", "template": "trees", "question": "在一条 66 米长的小路一侧植树,每隔 6 米栽一棵,两端都要栽,一共要栽多少棵树?", "answer": 11}
+{"id": "math_zh_v1-trees-2", "template": "trees", "question": "在一条 80 米长的小路一侧植树,每隔 5 米栽一棵,两端都要栽,一共要栽多少棵树?", "answer": 16}
+{"id": "math_zh_v1-trees-3", "template": "trees", "question": "在一条 180 米长的小路一侧植树,每隔 10 米栽一棵,两端都要栽,一共要栽多少棵树?", "answer": 18}
+{"id": "math_zh_v1-trees-4", "template": "trees", "question": "在一条 50 米长的小路一侧植树,每隔 5 米栽一棵,两端都要栽,一共要栽多少棵树?", "answer": 10}
+{"id": "math_zh_v1-trees-5", "template": "trees", "question": "在一条 115 米长的小路一侧植树,每隔 5 米栽一棵,两端都要栽,一共要栽多少棵树?", "answer": 23}
