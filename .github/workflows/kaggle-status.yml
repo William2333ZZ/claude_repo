@@ -46,5 +46,13 @@ jobs:
           cat out/eval_report.json 2>/dev/null || echo "(无 eval_report.json)"
           echo "--- generations 前 5 条(诊断模型实际输出)---"
           head -5 out/result/generations.jsonl 2>/dev/null | cut -c1-1500 || echo "(无 generations.jsonl)"
+          echo "--- 复判(协议判分器 eval_math;修 run5 判分口径 bug 后可离线重打分)---"
+          if [ -f out/result/generations.jsonl ] && [ -f out/repo/scripts/eval_math.py ]; then
+            python out/repo/scripts/eval_math.py --generations out/result/generations.jsonl \
+              --evalset out/repo/evalsets/math_zh_v1.jsonl --report rescore.json || true
+            echo "RESCORE_JSON_HEAD:"; head -c 400 rescore.json 2>/dev/null || true; echo
+          else
+            echo "(缺 generations 或仓库判分器,跳过复判)"
+          fi
           echo "--- log tail ---"
           tail -40 out/*.log 2>/dev/null || true

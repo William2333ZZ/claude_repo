@@ -16,7 +16,7 @@ import sys
 import time
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
-from eval_math import PROMPT, extract_answer  # noqa: E402  协议单一来源
+from eval_math import PROMPT, score  # noqa: E402  协议单一来源(含判分归一,勿手写比较)
 
 MODEL = os.environ.get("TRAIN_MODEL", "Qwen/Qwen2.5-7B-Instruct")
 SEED = int(os.environ.get("TRAIN_SEED", "42"))
@@ -119,9 +119,9 @@ def main() -> int:
         model.eval()
     train_seconds = round(time.time() - t0, 1)
 
-    # ---- 评测(协议:evalsets/README.md;贪心,固定 prompt,判分同 eval_math)----
+    # ---- 评测(协议:evalsets/README.md;贪心,固定 prompt;判分调 eval_math.score,不手写)----
     items = [json.loads(l) for l in pathlib.Path(args.evalset).read_text(encoding="utf-8").splitlines() if l.strip()]
-    correct, gens = 0, []
+    outputs = {}
     for i, item in enumerate(items, 1):
         msgs = [{"role": "user", "content": PROMPT.format(question=item["question"])}]
         prompt = tok.apply_chat_template(msgs, tokenize=False, add_generation_prompt=True)
@@ -130,22 +130,20 @@ def main() -> int:
         with _t2.no_grad():
             out_ids = model.generate(**enc, max_new_tokens=256, do_sample=False,
                                      pad_token_id=tok.pad_token_id or tok.eos_token_id)
-        text = tok.decode(out_ids[0][enc["input_ids"].shape[1]:], skip_special_tokens=True)
-        got = extract_answer(text)
-        ok = got is not None and got == item["answer"]
-        correct += ok
-        gens.append({"id": item["id"], "output": text, "got": got, "want": item["answer"], "ok": ok})
+        outputs[item["id"]] = tok.decode(out_ids[0][enc["input_ids"].shape[1]:], skip_special_tokens=True)
         print(f"eval [{i}/{len(items)}]", flush=True)
 
-    acc = round(correct / len(items) * 100, 1)
+    scored = score(items, outputs)
+    acc, correct = scored["accuracy"], scored["n_correct"]
     import transformers as _tfm
-    report = {"accuracy": acc, "correct": correct, "total": len(items), "model": MODEL,
+    report = {"accuracy": acc, "correct": correct, "total": scored["n_items"], "model": MODEL,
               "seed": SEED, "train_seconds": train_seconds, "skip_train": args.skip_train,
               "torch": torch.__version__, "transformers": _tfm.__version__}
     (out / "eval_report.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     with open(out / "generations.jsonl", "w", encoding="utf-8") as fh:
-        for g in gens:
-            fh.write(json.dumps(g, ensure_ascii=False) + "\n")
+        for r in scored["results"]:
+            fh.write(json.dumps({"id": r["id"], "output": outputs.get(r["id"], ""), "got": r["got"],
+                                 "want": r["want"], "ok": r["correct"]}, ensure_ascii=False) + "\n")
     print(f"accuracy: {acc} ({correct}/{len(items)}) -> {out / 'eval_report.json'}")
     return 0
 
