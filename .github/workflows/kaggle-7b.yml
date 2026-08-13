@@ -78,13 +78,11 @@ jobs:
           sed -i "s/__ARM__/${{ inputs.arm }}/; s/__SEED__/${{ inputs.seed }}/" kernel/run.py
       - name: Push kernel to Kaggle GPU
         env:
-          KAGGLE_USERNAME: s4526291
-          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: kaggle kernels push -p kernel
       - name: Poll until complete
         env:
-          KAGGLE_USERNAME: s4526291
-          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
           for i in $(seq 1 100); do
             sleep 180
@@ -98,8 +96,7 @@ jobs:
           done
       - name: Fetch result
         env:
-          KAGGLE_USERNAME: s4526291
-          KAGGLE_KEY: ${{ secrets.KAGGLE_API_TOKEN }}
+          KAGGLE_API_TOKEN: ${{ secrets.KAGGLE_API_TOKEN }}
         run: |
           kaggle kernels output "s4526291/$SLUG" -p out
           echo "===== eval_report.json ====="
