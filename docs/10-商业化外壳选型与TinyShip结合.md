@@ -78,6 +78,23 @@ flowchart LR
   记录于此,防止追踪器被未开工计划污染(docs/08 规则)。
 - 本文档同时兑现商业域欠账:设计合作客户材料的定价思想部分(§1、§4.3)。
 
+## 7. 架构深读(2026-08-13 补)
+
+TinyShip 2.0 的架构决策链(据作者公开的重构记录):
+
+1. **PNPM monorepo + 框架无关 libs**:Auth/支付/ORM 做成抽象接口放 `libs/`,三个框架
+   (Next.js/Nuxt/TanStack Start)只是薄适配——**与我们内核的 PaymentProvider/engines 模式
+   同构**,互相印证了"抽象层+薄适配"是对的
+2. **`libs/react-shared`**:Next.js 与 TanStack Start 共享 React 组件层——这让"先 Next.js、
+   将来可换 TanStack"成为低成本选项,是我们选 Next.js 的兜底理由之一
+3. **应用四区制**:Auth & Middleware / Public Pages / Protected Pages + Core API / Admin
+   ——采纳为外壳信息架构(见 docs/13 §4.5)
+4. **all-in-CF**(Workers/D1/R2/CF Email):工程上优雅,但 CF 大陆可达性差,
+   我们的部署决策推迟到 M3-H1 按首发市场定
+5. **开放式接口设计**:云商/数据库/支付商可自由替换——买它但不被它绑,符合 docs/04 零件层纪律
+
+对应的正式前端选型(内核零框架/外壳 Next.js/PG/四区制)已登记 docs/13 §4.5。
+
 ### 来源
 
 [TinyShip 官网](https://tinyship.cn/zh-CN) · [作者半年营收复盘](https://vikingz.me/tinyship-recap/) · [ShipFast](https://shipfa.st/) · [ShipFast 2026 测评](https://starterpick.com/blog/shipfast-review-2026) · [Boilerplate 横向对比](https://www.buildmvpfast.com/blog/best-nextjs-starter-kit-saas-boilerplate-2026) · [Quality software deserves your hard-earned cash](https://stephango.com/quality-software) · [Viking 推荐该文的推文](https://x.com/vikingmute/status/1778355062504640761) · [GOG](https://www.gog.com/)
