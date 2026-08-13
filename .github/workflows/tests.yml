@@ -1,0 +1,52 @@
+# 测试 CI:SQLite 全量 + PostgreSQL 账本外置实库(P0-1)。
+# push 到开发分支或手动触发;PG 用服务容器,资金路径(订单/账本幂等)在真库上验证。
+
+name: tests
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "datafoundry/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - ".github/workflows/tests.yml"
+
+jobs:
+  sqlite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --quiet -e '.[dev]'
+      - run: python -m pytest tests/ -q
+
+  postgres:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    services:
+      pg:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: df
+          POSTGRES_PASSWORD: df
+          POSTGRES_DB: df
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U df"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --quiet -e '.[dev,pg]'
+      - name: Live PG suite(账本/资金路径)
+        env:
+          DATAFOUNDRY_PG_TEST_URL: postgresql://df:df@localhost:5432/df
+        run: python -m pytest tests/test_store_pg_live.py -v

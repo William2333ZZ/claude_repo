@@ -1,9 +1,15 @@
-"""SQLite 元数据存储:用户 / API Key / 数据集 / 运行 / 审计。
+"""元数据存储:用户 / API Key / 数据集 / 运行 / 审计 / 订单与额度账本。
+
+后端二选一(P0-1 账本外置):
+  - SQLite(默认,零依赖):DATAFOUNDRY_HOME/meta.db,适合本地与单机
+  - PostgreSQL:设 DATAFOUNDRY_DB_URL(或平台注入的 DATABASE_URL)为 postgres://…
+    即启用;需要 `pip install 'datafoundry[pg]'`。账本(orders/credit_ledger)
+    随全部元数据落库外置,容器重建不丢——钱的记录只能放这里。
 
 数据目录 DATAFOUNDRY_HOME(默认 ./.datafoundry):
-  meta.db      元数据库
+  meta.db      元数据库(仅 SQLite 后端)
   secret.key   令牌签名密钥(0600)
-  runs/<id>/   每次运行的 output/rejects/manifest
+  runs/<id>/   每次运行的 output/rejects/manifest(工件可再生,不入库)
 """
 from __future__ import annotations
 
@@ -13,6 +19,7 @@ import secrets
 import sqlite3
 import threading
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 from datafoundry.security import (
@@ -104,9 +111,29 @@ CREATE TABLE IF NOT EXISTS device_codes (
 
 _USER_CODE_ALPHABET = "BCDFGHJKMNPQRSTVWXZ23456789"  # 无易混字符(0/O/1/I/L/E/A/U/Y)
 
+# SQLite DDL → PostgreSQL DDL 的最小转写(顺序敏感:先改主键再改普通列)
+_PG_DDL_MAP = [
+    ("INTEGER PRIMARY KEY", "BIGSERIAL PRIMARY KEY"),
+    ("user_id INTEGER", "user_id BIGINT"),
+    ("REAL", "DOUBLE PRECISION"),
+]
+
+
+def resolve_db_url(db_url: str | None = None) -> str:
+    """显式参数 > DATAFOUNDRY_DB_URL > 平台注入的 DATABASE_URL;空串 = SQLite。"""
+    url = db_url or os.environ.get("DATAFOUNDRY_DB_URL") or os.environ.get("DATABASE_URL") or ""
+    return url if url.startswith(("postgres://", "postgresql://")) else ""
+
+
+def pg_schema(sqlite_schema: str = _SCHEMA) -> str:
+    ddl = sqlite_schema
+    for a, b in _PG_DDL_MAP:
+        ddl = ddl.replace(a, b)
+    return ddl
+
 
 class Store:
-    def __init__(self, home: str | Path | None = None):
+    def __init__(self, home: str | Path | None = None, db_url: str | None = None):
         self.home = Path(home or os.environ.get("DATAFOUNDRY_HOME", ".datafoundry")).resolve()
         self.home.mkdir(parents=True, exist_ok=True)
         self.secret = load_or_create_secret(self.home)
@@ -115,23 +142,64 @@ class Store:
         self.uploads_dir = self.home / "uploads"
         self.uploads_dir.mkdir(exist_ok=True)
         self._lock = threading.Lock()
-        self._db = sqlite3.connect(self.home / "meta.db", check_same_thread=False)
-        self._db.row_factory = sqlite3.Row
-        with self._lock:
-            self._db.executescript(_SCHEMA)
-            self._db.commit()
+        url = resolve_db_url(db_url)
+        self.dialect = "postgres" if url else "sqlite"
+        if self.dialect == "postgres":
+            try:
+                import psycopg
+                from psycopg.rows import dict_row
+            except ImportError as e:  # pragma: no cover - 环境缺驱动时的提示路径
+                raise RuntimeError(
+                    "检测到 PostgreSQL 连接串,但缺少驱动:pip install 'datafoundry[pg]'"
+                ) from e
+            self._db = psycopg.connect(url, autocommit=True, row_factory=dict_row)
+            self.IntegrityError = psycopg.IntegrityError
+            with self._lock:
+                for stmt in pg_schema().split(";"):
+                    if stmt.strip():
+                        self._db.execute(stmt)
+        else:
+            self._db = sqlite3.connect(self.home / "meta.db", check_same_thread=False)
+            self._db.row_factory = sqlite3.Row
+            self.IntegrityError = sqlite3.IntegrityError
+            with self._lock:
+                self._db.executescript(_SCHEMA)
+                self._db.commit()
 
-    # ---------- 通用 ----------
+    # ---------- 通用(方言漏斗:所有 SQL 都从这里过) ----------
 
-    def _exec(self, sql: str, args: tuple = ()) -> sqlite3.Cursor:
-        with self._lock:
-            cur = self._db.execute(sql, args)
-            self._db.commit()
-            return cur
+    def _sql(self, sql: str) -> str:
+        return sql if self.dialect == "sqlite" else sql.replace("?", "%s")
 
-    def _query(self, sql: str, args: tuple = ()) -> list[sqlite3.Row]:
+    @contextmanager
+    def _txn(self):
+        """事务边界:pg 走显式 transaction(autocommit 连接),sqlite 走 commit/rollback。"""
         with self._lock:
-            return self._db.execute(sql, args).fetchall()
+            if self.dialect == "postgres":
+                with self._db.transaction():
+                    yield self._db
+            else:
+                try:
+                    yield self._db
+                    self._db.commit()
+                except Exception:
+                    self._db.rollback()
+                    raise
+
+    def _exec(self, sql: str, args: tuple = ()):
+        with self._txn() as db:
+            return db.execute(self._sql(sql), args)
+
+    def _query(self, sql: str, args: tuple = ()) -> list:
+        with self._lock:
+            return self._db.execute(self._sql(sql), args).fetchall()
+
+    def _insert_id(self, sql: str, args: tuple = ()) -> int:
+        """自增主键插入:sqlite 用 lastrowid,pg 用 RETURNING id。"""
+        if self.dialect == "postgres":
+            with self._txn() as db:
+                return db.execute(self._sql(sql) + " RETURNING id", args).fetchone()["id"]
+        return self._exec(sql, args).lastrowid
 
     def audit(self, username: str, action: str, detail: str = "") -> None:
         self._exec(
@@ -147,13 +215,13 @@ class Store:
         if len(password) < 8:
             raise ValueError("口令至少 8 位")
         try:
-            cur = self._exec(
+            new_id = self._insert_id(
                 "INSERT INTO users(username, pw_hash, role, created_at) VALUES(?,?,?,?)",
                 (username, hash_password(password), role, time.time()),
             )
-        except sqlite3.IntegrityError:
+        except self.IntegrityError:
             raise ValueError(f"用户已存在: {username}") from None
-        return {"id": cur.lastrowid, "username": username, "role": role}
+        return {"id": new_id, "username": username, "role": role}
 
     def authenticate(self, username: str, password: str) -> dict | None:
         rows = self._query("SELECT * FROM users WHERE username=?", (username,))
@@ -182,11 +250,11 @@ class Store:
 
     def create_api_key(self, user_id: int, label: str) -> dict:
         plain, key_hash = new_api_key()
-        cur = self._exec(
+        new_id = self._insert_id(
             "INSERT INTO api_keys(user_id, key_hash, label, created_at) VALUES(?,?,?,?)",
             (user_id, key_hash, label[:80] or "default", time.time()),
         )
-        return {"id": cur.lastrowid, "key": plain, "label": label, "note": "明文只展示这一次"}
+        return {"id": new_id, "key": plain, "label": label, "note": "明文只展示这一次"}
 
     def resolve_api_key(self, plain: str) -> dict | None:
         rows = self._query(
@@ -228,21 +296,20 @@ class Store:
         self._exec("UPDATE orders SET provider_ref=? WHERE id=?", (provider_ref, order_id))
 
     def mark_order_paid(self, order_id: str) -> dict | None:
-        """幂等:重复回调只记账一次。成功返回订单,已支付/不存在返回 None。"""
-        with self._lock:
-            cur = self._db.execute(
-                "UPDATE orders SET status='paid', paid_at=? WHERE id=? AND status='pending'",
+        """幂等:重复回调只记账一次。成功返回订单,已支付/不存在返回 None。
+        置 paid 与记账同事务——账本外置后这仍是唯一的资金写入点。"""
+        with self._txn() as db:
+            cur = db.execute(
+                self._sql("UPDATE orders SET status='paid', paid_at=? WHERE id=? AND status='pending'"),
                 (time.time(), order_id),
             )
             if cur.rowcount == 0:
-                self._db.commit()
                 return None
-            row = self._db.execute("SELECT * FROM orders WHERE id=?", (order_id,)).fetchone()
-            self._db.execute(
-                "INSERT INTO credit_ledger(user_id, delta, reason, order_id, ts) VALUES(?,?,?,?,?)",
+            row = db.execute(self._sql("SELECT * FROM orders WHERE id=?"), (order_id,)).fetchone()
+            db.execute(
+                self._sql("INSERT INTO credit_ledger(user_id, delta, reason, order_id, ts) VALUES(?,?,?,?,?)"),
                 (row["user_id"], row["credits"], f"purchase:{row['plan']}", order_id, time.time()),
             )
-            self._db.commit()
             return dict(row)
 
     def add_credits(self, user_id: int, delta: int, reason: str, order_id: str | None = None) -> None:
@@ -275,7 +342,7 @@ class Store:
                     (hash_api_key(device_code), user_code, label[:80] or "cli", poll_interval, now, now + ttl),
                 )
                 break
-            except sqlite3.IntegrityError:
+            except self.IntegrityError:
                 continue
         else:
             raise RuntimeError("user_code 生成失败,请重试")
