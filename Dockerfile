@@ -4,7 +4,7 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY pyproject.toml ./
 COPY datafoundry ./datafoundry
-RUN pip install --no-cache-dir ".[billing-alipay]"
+RUN pip install --no-cache-dir ".[billing-alipay,pg]"
 
 # HF Space 以非 root(uid 1000)运行,数据目录需可写;/data 挂持久盘时自动沿用
 RUN mkdir -p /data && chmod 777 /data
