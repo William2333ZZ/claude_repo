@@ -218,7 +218,8 @@ class AlipayProvider(PaymentProvider):
         )
         if result.get("code") != "10000":
             raise RuntimeError(
-                f"支付宝预下单失败: {result.get('code')} {result.get('sub_msg') or result.get('msg')}"
+                f"支付宝预下单失败: code={result.get('code')} msg={result.get('msg')} "
+                f"sub_code={result.get('sub_code')} sub_msg={result.get('sub_msg')}"
             )
         return {"code_url": result["qr_code"], "note": "转二维码后用支付宝(沙箱钱包)扫码支付"}
 
