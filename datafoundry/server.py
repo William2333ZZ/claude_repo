@@ -28,6 +28,7 @@ from datafoundry.billing import PLANS, billing_enabled, get_provider
 from datafoundry.engines import ENGINES, engine_status
 from datafoundry.pipeline import estimate as pipeline_estimate
 from datafoundry.pipeline import validate_steps
+from datafoundry.ratelimit import LoginGuard, SlidingWindow, client_key
 from datafoundry.recipes import get_recipe, list_recipes, missing_requirements, recipe_steps
 from datafoundry.registry import catalog
 from datafoundry.runner import load_jsonl, run_pipeline
@@ -89,6 +90,31 @@ def create_app(store: Store | None = None) -> FastAPI:
     store = store or Store()
     app = FastAPI(title="DataFoundry", version=__version__)
     app.state.store = store
+
+    # ---------- [M2-G1] 速率限制与登录锁定(docs/12 P1-1;边界见 ratelimit 模块注释) ----------
+    import os as _os0
+
+    limiter = SlidingWindow(limit=int(_os0.environ.get("DATAFOUNDRY_RATE_RPM", "240")))
+    login_guard = LoginGuard(
+        max_fails=int(_os0.environ.get("DATAFOUNDRY_LOGIN_MAX_FAILS", "5")),
+        cooldown=float(_os0.environ.get("DATAFOUNDRY_LOGIN_COOLDOWN", "300")),
+    )
+    app.state.limiter, app.state.login_guard = limiter, login_guard
+    _RATE_EXEMPT = ("/health", "/billing/webhook")  # 健康检查与支付回调不限流
+
+    @app.middleware("http")
+    async def _rate_limit(request: Request, call_next):
+        if request.url.path not in _RATE_EXEMPT:
+            wait = limiter.hit(client_key(request))
+            if wait > 0:
+                from fastapi.responses import JSONResponse
+
+                return JSONResponse(
+                    {"detail": "请求过于频繁,请稍后再试"},
+                    status_code=429,
+                    headers={"Retry-After": str(int(wait) + 1)},
+                )
+        return await call_next(request)
 
     # 容器部署引导:库为空且设置了 DATAFOUNDRY_BOOTSTRAP_ADMIN="用户名:口令" 时自动建 admin,
     # 避免公网实例的 /auth/bootstrap 被抢注。口令经 Space/容器 secret 注入,不落仓库。
@@ -184,10 +210,20 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--muted)}
         return {"created": user, "note": "第一个 admin 已创建,请立即登录"}
 
     @app.post("/auth/login")
-    def login(body: LoginBody):
+    def login(body: LoginBody, request: Request):
+        guard_key = f"{body.username}|{client_key(request)}"
+        locked = login_guard.locked_for(guard_key)
+        if locked > 0:  # 锁定期内正确口令也拒绝
+            raise HTTPException(
+                423, f"登录已锁定,请 {int(locked) + 1} 秒后再试",
+                headers={"Retry-After": str(int(locked) + 1)},
+            )
         user = store.authenticate(body.username, body.password)
         if not user:
+            just_locked = login_guard.fail(guard_key)
+            store.audit(body.username, "login_failed", "locked" if just_locked else "")
             raise HTTPException(401, "用户名或口令错误")
+        login_guard.ok(guard_key)
         store.audit(user["username"], "login")
         return {
             "token": create_token(store.secret, user["id"], user["username"], user["role"]),
