@@ -276,13 +276,13 @@
       <div class="layer">
         <div class="layer-bar">
           <div class="l-num">L3</div>
-          <div class="l-title"><h2>AI 能力层 · 支撑面 + 驾驶面 + Mission 协同网</h2><p>支撑面拿掉是"变慢",驾驶面拿掉是"做不到"。AI 全部只到 advise——裁决权在确定性算子与已授权配方</p></div>
+          <div class="l-title"><h2>AI 能力层 · 支撑面 + 驾驶面 + Mission 协同网(只含 AI)</h2><p>支撑面拿掉是"变慢",驾驶面拿掉是"做不到"。本层全部只到 advise——裁决权在 L4 的确定性算子族,不在本层</p></div>
           <div class="l-meta">认知 + 主动编排</div>
         </div>
         <div class="l-body">
           <div class="cap-label">支撑面(AI-ready · 拿掉=变慢)</div>
           <div class="cells c4">
-            <div class="cell"><i class="st ok">已建</i><strong>意图→配方草案</strong><span>doc2sft 链:分块→QA→判审</span></div>
+            <div class="cell"><i class="st wn">#16</i><strong>意图→配方提案</strong><span>自然语言→配方草案(未建;配方现为人选)</span></div>
             <div class="cell"><i class="st wn">M2</i><strong>死因解释生成</strong><span>处置链→人话理由</span></div>
             <div class="cell"><i class="st ok">已建</i><strong>语料画像</strong><span>analysis:分布/杀伤率</span></div>
             <div class="cell"><i class="st ok">已建</i><strong>成本演算</strong><span>estimate:跑前知道花多少</span></div>
@@ -293,13 +293,12 @@
             <div class="cell fu"><i class="st fu">R5</i><strong>质量预测</strong><span>训前预测训后分数 · 带置信度</span></div>
             <div class="cell fu"><i class="st fu">R5</i><strong>长尾判审沉淀</strong><span>规则没覆盖→推理→限时固化为算子</span></div>
           </div>
-          <div class="cap-label">原子能力(注册表统一管理 · 成本三档)</div>
-          <div class="cells c5">
+          <div class="cap-label">AI 原子能力(只建议,无裁决权)</div>
+          <div class="cells c4">
             <div class="cell"><i class="st ok">已建</i><strong>LLM 网关</strong><span>BYOK · 多端点 · 错误率20%熔断</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>LLM 判审</strong><span>只建议;杀样本须依授权阈值</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>QA 合成</strong><span>chunk→QA 对 · 血缘完整</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>验证器族(裁决权)</strong><span>math ✅ · 代码#9 · SQL#11 确定性</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>去重/过滤/脱敏</strong><span>exact+minhash · 规则族 · PII</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>LLM 判审</strong><span>只出分数意见;处置须依授权配方阈值</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>QA 合成(doc2sft)</strong><span>分块→QA 对 · 血缘完整</span></div>
+            <div class="cell fu"><i class="st fu">M2</i><strong>嵌入检索</strong><span>语义相似 · 向量库</span></div>
           </div>
           <div class="cap-label">Mission 协同网(= 托管运营的架构名 · 事件驱动 · 只到"拟提案")</div>
           <div class="trigs"><span style="font-weight:800;color:var(--ink2)">事件触发:</span>
@@ -327,10 +326,18 @@
       <div class="layer">
         <div class="layer-bar">
           <div class="l-num">L4</div>
-          <div class="l-title"><h2>平台底座 · 治理内核(一切精炼的唯一通道)</h2><p>左:四个平台中心。右:意图→配方提案→授权→精炼事实主链。授权粒度=配方/预算/交付三杠杆,样本级裁决下放确定性验证器</p></div>
-          <div class="l-meta">提案 + 授权</div>
+          <div class="l-title"><h2>平台底座 · 治理内核(一切精炼的唯一通道 · 裁决权所在)</h2><p>左:四个平台中心。右:意图→配方提案→授权→精炼事实主链。授权粒度=配方/预算/交付三杠杆,样本级裁决由本层确定性算子执行</p></div>
+          <div class="l-meta">提案 + 授权 + 裁决</div>
         </div>
         <div class="l-body">
+          <div class="cap-label">确定性算子族(裁决的执行臂 · 非 AI · 与 L3 物理分层——这个隔离就是安全线的图形表达)</div>
+          <div class="cells c5" style="margin-bottom:10px">
+            <div class="cell hi"><i class="st ok">已建</i><strong>验证器族</strong><span>math ✅ · 代码 #9 · SQL #11 · 对错答杀伤 100%</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>去重</strong><span>exact + minhash 近似</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>规则过滤族</strong><span>长度/符号比/重复度/语言</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>打分器阈值</strong><span>质量分筛选(FineWeb-Edu 风格)</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>PII 脱敏</strong><span>改写不杀 · 合规抽样点</span></div>
+          </div>
           <div class="split">
             <div class="engine">
               <h3>四个平台中心</h3>
