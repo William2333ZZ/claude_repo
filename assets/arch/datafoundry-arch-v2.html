@@ -276,31 +276,30 @@
       <div class="layer">
         <div class="layer-bar">
           <div class="l-num">L3</div>
-          <div class="l-title"><h2>AI 能力层 · 支撑面 + 驾驶面 + Mission 协同网(只含 AI)</h2><p>支撑面拿掉是"变慢",驾驶面拿掉是"做不到"。本层全部只到 advise——裁决权在 L4 的确定性算子族,不在本层</p></div>
-          <div class="l-meta">认知 + 主动编排</div>
+          <div class="l-title"><h2>智能体与模型层 · 认知外接(harness,而非自建)</h2><p>认知租用,证据自有:平台不造大脑,造大脑愿意用的手(df_* 工具)与不会说谎的账本。认知随模型进步贬值,证据与档案随使用增值——建在增值的一侧</p></div>
+          <div class="l-meta">认知外接 + 批处理算子</div>
         </div>
         <div class="l-body">
-          <div class="cap-label">支撑面(AI-ready · 拿掉=变慢)</div>
-          <div class="cells c4">
-            <div class="cell"><i class="st wn">#16</i><strong>意图→配方提案</strong><span>自然语言→配方草案(未建;配方现为人选)</span></div>
-            <div class="cell"><i class="st wn">M2</i><strong>死因解释生成</strong><span>处置链→人话理由</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>语料画像</strong><span>analysis:分布/杀伤率</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>成本演算</strong><span>estimate:跑前知道花多少</span></div>
+          <div class="cap-label">外接智能体(经 MCP 接入 · 即 L1 工作台的大脑 · 意图理解/配方拟稿/死因解读/报告草拟全由它做,平台零建设)</div>
+          <div class="cells c3">
+            <div class="cell hi"><i class="st ok">已验</i><strong>Claude Code</strong><span>9 个 df_* 工具实测 · 本项目的运营本身就是案例</span></div>
+            <div class="cell"><i class="st wn">待实测</i><strong>Codex / 任意 MCP 客户端</strong><span>MCP 协议标准 · 不锁供应商</span></div>
+            <div class="cell hi"><i class="st ok">已验</i><strong>BYOK 模型端点</strong><span><code>DATAFOUNDRY_LLM_*</code> · DeepSeek 7,172 次真实调用 · 不赚 token 差价</span></div>
           </div>
-          <div class="cap-label">驾驶面(AI 原生 · 拿掉=做不到 · 需跨客户 run 档案积累)</div>
+          <div class="cap-label">数据面批处理 AI 算子(必须自有的例外:agent 不适合按样本循环五千次 · runner 内跑 · BYOK 驱动 · 平台只拥有协议+证据采集)</div>
+          <div class="cells c4">
+            <div class="cell"><i class="st ok">已建</i><strong>LLM 判审</strong><span>只出分数意见 · labels 落盘 · 错误率20%熔断</span></div>
+            <div class="cell"><i class="st ok">已建</i><strong>QA 合成(doc2sft)</strong><span>分块→QA 对 · 血缘完整</span></div>
+            <div class="cell"><i class="st wn">M1-B1</i><strong>蒸馏管线</strong><span>judge_labels→自有小算子:租来的认知固化为资产</span></div>
+            <div class="cell fu"><i class="st fu">M2</i><strong>嵌入检索</strong><span>语义相似 · 向量库</span></div>
+          </div>
+          <div class="cap-label">档案驱动能力(R5 · 靠自有 run 档案不靠更大模型 · 需跨客户积累)</div>
           <div class="cells c3">
             <div class="cell fu"><i class="st fu">R5</i><strong>配方挖掘</strong><span>从历史 run 学"什么语料配什么方"</span></div>
             <div class="cell fu"><i class="st fu">R5</i><strong>质量预测</strong><span>训前预测训后分数 · 带置信度</span></div>
             <div class="cell fu"><i class="st fu">R5</i><strong>长尾判审沉淀</strong><span>规则没覆盖→推理→限时固化为算子</span></div>
           </div>
-          <div class="cap-label">AI 原子能力(只建议,无裁决权)</div>
-          <div class="cells c4">
-            <div class="cell"><i class="st ok">已建</i><strong>LLM 网关</strong><span>BYOK · 多端点 · 错误率20%熔断</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>LLM 判审</strong><span>只出分数意见;处置须依授权配方阈值</span></div>
-            <div class="cell"><i class="st ok">已建</i><strong>QA 合成(doc2sft)</strong><span>分块→QA 对 · 血缘完整</span></div>
-            <div class="cell fu"><i class="st fu">M2</i><strong>嵌入检索</strong><span>语义相似 · 向量库</span></div>
-          </div>
-          <div class="cap-label">Mission 协同网(= 托管运营的架构名 · 事件驱动 · 只到"拟提案")</div>
+          <div class="cap-label">Mission 协同网(= 定时/事件触发的智能体会话,不自建工作流引擎 · 本项目此刻的运营方式即活案例 · 只到"拟提案")</div>
           <div class="trigs"><span style="font-weight:800;color:var(--ink2)">事件触发:</span>
             <span class="trig">语料更新 → 增量精炼</span><span class="trig">评测分下降 → 漂移诊断</span>
             <span class="trig">法规模板更新 → 重审计</span><span class="trig">判审错误率超限 → 熔断恢复</span></div>
