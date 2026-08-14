@@ -99,6 +99,47 @@ jobs:
           else:
               print("计费:未配置支付 secrets,保持关闭")
 
+          # 1.5) [P0-1] 账本外置:确保 Render 免费 PostgreSQL 存在,连接串注入
+          #      DATAFOUNDRY_DB_URL(含密码:立即 add-mask,全程不打印不落 summary)
+          PG_NAME = f"{NAME}-ledger"
+          st, pgs = call("GET", "/postgres?limit=20")
+          pg = None
+          if st == 200 and pgs:
+              for item in pgs:
+                  p = item.get("postgres", item)
+                  if p.get("name") == PG_NAME:
+                      pg = p
+                      print("复用已有 PostgreSQL:", p.get("id"))
+                      break
+          if not pg:
+              st, created = call("POST", "/postgres", body={
+                  "name": PG_NAME, "ownerId": owner_id, "plan": "free",
+                  "region": "oregon", "version": "16"})
+              if st in (200, 201) and created:
+                  pg = created.get("postgres", created)
+                  print("PostgreSQL 已创建:", pg.get("id"), "(free 档,30 天有效期——到期前迁 Neon)")
+              else:
+                  sys.exit("PostgreSQL 创建失败:见上方 API 响应(free 档配额可能已用)")
+          pgid = pg["id"]
+          pg_deadline = time.time() + 600
+          while time.time() < pg_deadline:
+              st, info = call("GET", f"/postgres/{pgid}")
+              p = (info or {}).get("postgres", info) if st == 200 else {}
+              pstat = (p or {}).get("status", "unknown")
+              print("pg status:", pstat)
+              if pstat == "available":
+                  break
+              time.sleep(15)
+          else:
+              sys.exit("PostgreSQL 600 秒内未 available")
+          st, conn = call("GET", f"/postgres/{pgid}/connection-info")
+          db_url = (conn or {}).get("internalConnectionString") or (conn or {}).get("externalConnectionString") or ""
+          if st != 200 or not db_url:
+              sys.exit(f"取连接串失败 HTTP {st}")
+          print(f"::add-mask::{db_url}")
+          env_vars.append({"key": "DATAFOUNDRY_DB_URL", "value": db_url})
+          print("账本外置:DATAFOUNDRY_DB_URL 已注入(值已脱敏)")
+
           # 2) 已存在则复用:更新环境变量并触发部署
           st, existing = call("GET", f"/services?name={NAME}&limit=5")
           svc = None
