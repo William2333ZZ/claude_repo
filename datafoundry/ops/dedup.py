@@ -31,18 +31,21 @@ class ExactDedup(Op):
     expected_retention = 0.85
     description = "归一化(小写+空白折叠)后按 blake2b 指纹精确去重,保留首个"
 
+    def __init__(self):
+        super().__init__()
+        self._seen: set[bytes] = set()  # 实例级:流式分块下跨块存活([M2-E2])
+
     def process(self, sample):  # pragma: no cover - 语料级算子走 process_batch
         return sample
 
     def process_batch(self, samples: Iterable[dict]) -> Iterator[dict | None]:
-        seen: set[bytes] = set()
         for s in samples:
             fp = hashlib.blake2b(_normalize(s["text"]).encode("utf-8"), digest_size=16).digest()
-            if fp in seen:
+            if fp in self._seen:
                 add_trace(s, self.name, "kill", "exact duplicate")
                 yield None
                 continue
-            seen.add(fp)
+            self._seen.add(fp)
             add_trace(s, self.name, "pass")
             yield s
 
@@ -85,6 +88,10 @@ class MinHashDedup(Op):
         ints = self._rand_ints(2 * num_perm)
         self._a = [(v % (self._MERSENNE - 1)) + 1 for v in ints[:num_perm]]
         self._b = [v % self._MERSENNE for v in ints[num_perm:]]
+        # 实例级增量状态(流式分块下跨块存活,[M2-E2])
+        self._uf = _UnionFind()
+        self._buckets: dict[tuple[int, bytes], int] = {}
+        self._next_idx = 0
 
     @staticmethod
     def _rand_ints(count: int) -> list[int]:
@@ -116,34 +123,31 @@ class MinHashDedup(Op):
     def process(self, sample):  # pragma: no cover - 语料级算子走 process_batch
         return sample
 
+    # [M2-E2] 增量语义:样本到达即判——任一 band 撞上已见桶即近重(该桶簇首必已保留)。
+    # 与旧批式两遍聚簇的差异:晚到样本把两个既有簇传递合并时,旧版会追溯划簇、
+    # 本版两簇首都已保留(合并只影响后续)。增量语义是分片执行器(#14)的前提,
+    # 且使去重结果与 chunk 大小严格无关。
     def process_batch(self, samples: Iterable[dict]) -> Iterator[dict | None]:
-        materialized = list(samples)
-        uf = _UnionFind()
-        buckets: dict[tuple[int, bytes], int] = {}
-        sigs: dict[int, list[int]] = {}
-        for idx, s in enumerate(materialized):
+        for s in samples:
             sig = self._signature(s["text"])
-            if sig is None:
-                continue
-            sigs[idx] = sig
-            for band in range(self.bands):
-                chunk = sig[band * self.rows : (band + 1) * self.rows]
-                key = (band, hashlib.blake2b(struct.pack(f"<{self.rows}Q", *chunk), digest_size=8).digest())
-                if key in buckets:
-                    uf.union(buckets[key], idx)
-                else:
-                    buckets[key] = idx
-        kept_roots: set[int] = set()
-        for idx, s in enumerate(materialized):
-            if idx not in sigs:  # 太短没法算签名,放行
+            if sig is None:  # 太短没法算签名,放行
                 add_trace(s, self.name, "pass", "too short for signature")
                 yield s
                 continue
-            root = uf.find(idx)
-            if root in kept_roots:
-                add_trace(s, self.name, "kill", f"near-dup of cluster {root}")
+            idx = self._next_idx
+            self._next_idx += 1
+            matched = False
+            for band in range(self.bands):
+                chunk = sig[band * self.rows : (band + 1) * self.rows]
+                key = (band, hashlib.blake2b(struct.pack(f"<{self.rows}Q", *chunk), digest_size=8).digest())
+                if key in self._buckets:
+                    self._uf.union(self._buckets[key], idx)
+                    matched = True
+                else:
+                    self._buckets[key] = idx
+            if matched:
+                add_trace(s, self.name, "kill", f"near-dup of cluster {self._uf.find(idx)}")
                 yield None
             else:
-                kept_roots.add(root)
                 add_trace(s, self.name, "pass")
                 yield s

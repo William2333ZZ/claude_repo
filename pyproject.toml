@@ -29,3 +29,4 @@ include = ["datafoundry*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["slow: 较慢的验收级测试(内存平坦等)"]
