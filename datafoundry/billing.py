@@ -171,8 +171,11 @@ class WechatPayProvider(PaymentProvider):
 
 
 class AlipayProvider(PaymentProvider):
-    """当面付路线(pip install "datafoundry[billing-alipay]",即 python-alipay-sdk):
-    trade.precreate 预下单出 qr_code(转二维码扫码付),异步通知 RSA2 验签。
+    """支付宝(pip install "datafoundry[billing-alipay]",即 python-alipay-sdk)。
+    产品经 ALIPAY_PRODUCT 选择,匹配应用实际签约的能力(40004 ACCESS_FORBIDDEN=没签):
+      page(默认)  电脑网站支付 trade.page.pay:出 pay_url,浏览器打开在收银台支付
+      precreate    当面付 trade.precreate:出 qr_code(转二维码扫码付)
+    异步通知两产品同构(RSA2 验签,TRADE_SUCCESS 入账)。
     ALIPAY_SANDBOX=1 走沙箱网关(开放平台沙箱环境,无需提审签约即可联调)。
     注意:支付宝要求通知应答明文 "success"(ack_response 机制,webhook 端点会遵守)。"""
 
@@ -211,17 +214,28 @@ class AlipayProvider(PaymentProvider):
         return f"-----BEGIN {kind}-----\n{lines}\n-----END {kind}-----"
 
     def create_payment(self, order):
-        result = self._client.api_alipay_trade_precreate(
-            out_trade_no=order["id"],
-            total_amount=f"{order['amount_cents'] / 100:.2f}",
-            subject=f"DataFoundry {order['plan']}",
-        )
-        if result.get("code") != "10000":
-            raise RuntimeError(
-                f"支付宝预下单失败: code={result.get('code')} msg={result.get('msg')} "
-                f"sub_code={result.get('sub_code')} sub_msg={result.get('sub_msg')}"
+        amount = f"{order['amount_cents'] / 100:.2f}"
+        subject = f"DataFoundry {order['plan']}"
+        if os.environ.get("ALIPAY_PRODUCT", "page") == "precreate":
+            result = self._client.api_alipay_trade_precreate(
+                out_trade_no=order["id"], total_amount=amount, subject=subject,
             )
-        return {"code_url": result["qr_code"], "note": "转二维码后用支付宝(沙箱钱包)扫码支付"}
+            if result.get("code") != "10000":
+                raise RuntimeError(
+                    f"支付宝预下单失败: code={result.get('code')} msg={result.get('msg')} "
+                    f"sub_code={result.get('sub_code')} sub_msg={result.get('sub_msg')}"
+                )
+            return {"code_url": result["qr_code"], "note": "转二维码后用支付宝扫码支付(当面付)"}
+        # 电脑网站支付:本地签名拼收银台 URL,无网关调用(权限在用户打开 URL 时校验)
+        order_string = self._client.api_alipay_trade_page_pay(
+            out_trade_no=order["id"], total_amount=amount, subject=subject,
+            return_url=os.environ.get("ALIPAY_RETURN_URL") or None,
+        )
+        gateway = ("https://openapi.alipaydev.com/gateway.do"
+                   if os.environ.get("ALIPAY_SANDBOX", "") == "1"
+                   else "https://openapi.alipay.com/gateway.do")
+        return {"pay_url": f"{gateway}?{order_string}",
+                "note": "浏览器打开 pay_url,在支付宝收银台扫码或登录支付(电脑网站支付)"}
 
     def parse_webhook(self, headers, body):
         data = {k: v[0] for k, v in urllib.parse.parse_qs(body.decode("utf-8")).items()}
