@@ -107,6 +107,7 @@ flowchart LR
 | [docs/18-架构总览.md](docs/18-架构总览.md) | **架构总览**：产品架构（客户旅程漏斗×产品形态）、技术架构 as-built、部署与跳板拓扑、数据闭环四张图 + 模块↔代码↔实证对照表 |
 | [docs/19-同构对标LangAlpha.md](docs/19-同构对标LangAlpha.md) | **同构对标**：LangAlpha（"Claude Code for Financial Market"）的架构/开源切法/BYOK/交付形态提取，六项采纳决策（BYOK 卖点、私有化交付一等化、复利叙事等） |
 | [docs/20-C2复现报告.md](docs/20-C2复现报告.md) | **M1-C2 公开复现报告（gate 判定文书）**：证据等级声明、四种子/LLM 双种子/3B 复验全数据、死因杀伤率机制、第三方复现指引（sha256+运行 ID）、gate「通过，限定主张」 |
+| [docs/21-目标架构v2.md](docs/21-目标架构v2.md) | **目标架构 v2（AI 原生）**：主链「意图→配方提案→授权→精炼事实」、五层结构 as-built 映射、安全线（判审只建议/验证器裁决）、R↔M 演进、对 BMS 架构的采纳/改造/拒绝；视觉版 [assets/arch/datafoundry-arch-v2.html](assets/arch/datafoundry-arch-v2.html) |
 
 ---
 
