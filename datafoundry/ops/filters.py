@@ -167,7 +167,7 @@ class MathAnswerVerify(Op):
     expected_retention = 0.7
     description = "硬验证示例:文本末尾/boxed 答案与 meta[reference] 数值一致才留(验证器族的第一块砖)"
 
-    _boxed = re.compile(r"\\boxed\{([^{}]+)\}")
+    _boxed = re.compile(r"\\boxed\{((?:[^{}]|\{[^{}]*\})+)\}")  # 容一层嵌套:\boxed{\frac{1}{2}}
     _num = re.compile(r"-?\d+(?:\.\d+)?")
 
     def __init__(self, reference_key: str = "reference"):
@@ -183,14 +183,19 @@ class MathAnswerVerify(Op):
         return str(int(v)) if v == int(v) else f"{v:g}"
 
     def process(self, sample):
+        from datafoundry.matheq import equivalent, to_fraction  # 等价判定单源(M2-D2)
+
         ref = sample["meta"].get(self.reference_key)
         if ref is None:
             add_trace(sample, self.name, "kill", f"meta 缺少 {self.reference_key}")
             return None
         boxed = self._boxed.findall(sample["text"])
-        got = self._norm(boxed[-1]) if boxed else self._norm(sample["text"][-80:])
-        want = self._norm(ref)
-        if got is not None and want is not None and got == want:
+        # boxed 内容先整体尝试(保留 1/2、\frac{1}{2} 等形式),失败再退历史的取末数字
+        raw = boxed[-1] if boxed else None
+        got = (raw if raw is not None and to_fraction(raw) is not None
+               else (self._norm(raw) if raw is not None else self._norm(sample["text"][-80:])))
+        want = ref if to_fraction(ref) is not None else self._norm(ref)
+        if equivalent(got, want):
             add_trace(sample, self.name, "pass", f"answer={got}")
             return sample
         add_trace(sample, self.name, "kill", f"answer={got} != reference={want}")

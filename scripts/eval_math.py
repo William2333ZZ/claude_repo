@@ -16,6 +16,13 @@ import re
 import sys
 import urllib.request
 
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))  # 未安装包时(如探针复判)也能找到 datafoundry
+try:
+    from datafoundry.matheq import equivalent  # 等价判定单源(M2-D2)
+except ImportError:  # 独立脚本兜底:回落 L0 精确匹配(历史行为)
+    def equivalent(a, b):  # type: ignore[misc]
+        return a is not None and b is not None and str(a).strip() == str(b).strip()
+
 PROMPT = "请解答下面的数学题,一步步思考,最后一行只写「答案: <数字>」。\n题目:{question}"
 _ANS_TAG = re.compile(r"答案[::]\s*(-?\d+(?:\.\d+)?)")
 _NUM = re.compile(r"-?\d+(?:\.\d+)?")
@@ -57,8 +64,11 @@ def score(items: list[dict], outputs: dict[str, str]) -> dict:
     for it in items:
         out = outputs.get(it["id"])
         got = extract_answer(out) if out is not None else None
-        want = str(int(it["answer"]))
-        ok = got is not None and got == want
+        try:  # 历史归一(整数答案)优先,保持零回归;非整型答案(v2 起)原样交等价函数
+            want = str(int(it["answer"]))
+        except (ValueError, TypeError):
+            want = str(it["answer"]).strip()
+        ok = equivalent(got, want)
         results.append({"id": it["id"], "want": want, "got": got, "correct": ok, "missing": out is None})
     n_ok = sum(r["correct"] for r in results)
     return {
