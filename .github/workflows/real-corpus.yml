@@ -104,7 +104,7 @@ jobs:
               "false_equation_kills": sum(1 for _ in open("/tmp/run/rejects.jsonl", encoding="utf-8")
                                           if '"false_equation"' in _),
           }
-          out = pathlib.Path("experiments/m2_real/${{ inputs.dataset }}".replace("/", "__"))
+          out = pathlib.Path("experiments/m2_real") / "${{ inputs.dataset }}".replace("/", "__")
           out.mkdir(parents=True, exist_ok=True)
           (out / "autopsy.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
           pct = lambda k: f"{causes.get(k, 0)} ({causes.get(k, 0) / m['n_in'] * 100:.1f}%)"

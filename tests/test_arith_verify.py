@@ -47,3 +47,29 @@ def test_thousands_separator_normalized():
 def test_chained_equation_first_segment_checked():
     # 「3+4=7-2」左段 3+4=7 为真;链式书写不产生误杀
     assert _run("3+4=7-2=5,最后答案 5") is not None
+
+
+# ---------- v2:带余数除法与边界护栏(真实语料首跑暴露的两类疑似误杀) ----------
+
+def test_remainder_division_not_killed():
+    assert _run("每人分到 10÷3=3……1(个),即 3 个余 1 个") is not None
+    assert _run("5÷3=1……2,商 1 余 2") is not None
+    assert _run("20÷3=6,余2,所以要 7 辆车") is not None
+
+
+def test_remainder_division_wrong_still_killed():
+    s = _s("10÷3=3……2,余数算错了")
+    assert create_op("arithmetic_consistency_verify").process(s) is None
+    assert "余" in s["stats"]["false_equation"]
+
+
+def test_left_boundary_no_partial_match():
+    assert _run("13+2=15,答案 15") is not None  # 不得截成 3+2=15
+
+
+def test_fraction_continuation_not_killed():
+    assert _run("化简得 1/4=5/20 两者相等") is not None  # 不得截成 1/4=5
+
+
+def test_plain_false_division_still_killed():
+    assert _run("12÷5=2.5") is None  # 无余数记法的假除法仍杀

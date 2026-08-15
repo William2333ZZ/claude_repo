@@ -167,7 +167,15 @@ class ArithmeticConsistencyVerify(Op):
     expected_retention = 0.8
     description = "解答自洽验证:检出正文全部 a◦b=c 算式断言并复算,任一为假即杀——真实语料无参考答案时的确定性验证器"
 
-    _eq = re.compile(r"(\d+(?:\.\d+)?)\s*([+\-×*xX÷/])\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)")
+    # 边界护栏:左侧不接数字/小数点/斜杠(防 13+2 被截成 3+2),右侧不接数字/斜杠
+    # (防 1/4=5/20 被截成 1/4=5)——宁漏检不误杀
+    _eq = re.compile(
+        r"(?<![\d./])(\d+(?:\.\d+)?)\s*([+\-×*xX÷/])\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)(?![\d/])"
+    )
+    # 带余数除法记法:a÷b=q……r / a…r / 余 r —— 按 a=q*b+r 且 r<b 验证,先于普通算式消耗
+    _rem = re.compile(
+        r"(?<![\d./])(\d+)\s*[÷/]\s*(\d+)\s*=\s*(\d+)\s*(?:[…]{1,2}|\.{2,6}|,?\s*余)\s*(\d+)(?![\d/])"
+    )
     _thousands = re.compile(r"(?<=\d),(?=\d{3}\b)")
 
     def __init__(self, min_claims: int = 1, rel_tol: float = 1e-9, abs_tol: float = 1e-6):
@@ -192,11 +200,27 @@ class ArithmeticConsistencyVerify(Op):
 
     def process(self, sample):
         text = self._thousands.sub("", sample["text"])
+        checked = 0
+        # 先处理带余数除法(并从文本消耗,避免被普通算式正则截断误杀)
+        def _rem_check(m: re.Match) -> str:
+            nonlocal checked
+            a, b, q, r = (int(m.group(i)) for i in range(1, 5))
+            if b == 0:
+                return " "
+            checked += 1
+            if a == q * b + r and r < b:
+                return " "  # 成立:消耗掉
+            sample["stats"]["false_equation"] = f"{a}÷{b}={q}余{r}"
+            return "\x00KILL\x00"
+
+        text = self._rem.sub(_rem_check, text)
+        if "\x00KILL\x00" in text:
+            add_trace(sample, self.name, "kill", f"假算式: {sample['stats']['false_equation']}")
+            return None
         claims = self._eq.findall(text)
-        if len(claims) < self.min_claims:
+        if checked == 0 and len(claims) < self.min_claims:
             add_trace(sample, self.name, "pass", "无算式断言,放行")
             return sample
-        checked = 0
         for sa, op, sb, sc in claims:
             ok = self._check(float(sa), op, float(sb), float(sc))
             if ok is None:
