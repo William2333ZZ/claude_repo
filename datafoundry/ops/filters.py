@@ -210,7 +210,9 @@ class ArithmeticConsistencyVerify(Op):
         这些数学上不严格,但不是"算错";判死会污染假算式统计——宁漏检不误杀。"""
         if op not in "÷/":
             return None
-        if op == "/" and "." not in sc and float(sa) < float(sb) and float(sc) >= 1:
+        # 真分数「等于」≥1 的值,几乎必是「X 的 p/q = c」惯用语(c 可为小数:的1/4=2.5千米);
+        # 真正的分数换算笔误(1/4=0.5)结果必 <1,仍走严格复算
+        if op == "/" and float(sa) < float(sb) and float(sc) >= 1:
             return "fraction_idiom"
         if "." in sa or "." in sb:
             return None

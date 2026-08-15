@@ -101,6 +101,10 @@ def test_fraction_idiom_logged_not_killed():
     s = _s("全程的1/4=5千米,所以全程 20 千米")
     out = create_op("arithmetic_consistency_verify").process(s)
     assert out is not None and out["stats"]["fraction_idiom"] == 1
+    # v3.1:惯用语结果为小数同样豁免(的1/4=2.5千米,全程 10 千米)
+    assert _run("全程的1/4=2.5千米") is not None
+    # 真正的分数换算笔误(结果 <1)仍走严格复算并判死
+    assert _run("化成小数 1/4=0.5") is None
 
 
 def test_compound_expression_not_misread():
