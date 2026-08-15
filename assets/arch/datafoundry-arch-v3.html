@@ -1,0 +1,296 @@
+<title>DataFoundry 目标架构</title>
+<style>
+  :root{
+    --bg:#F7F7FA;--card:#FFFFFF;--ink:#1B2430;--ink2:#5C6672;--ink3:#8A8FA3;
+    --line:#E4E2EE;--acc9:#33246B;--acc7:#6741D9;--acc5:#8B6BE8;--acc1:#EFEBFB;--acc05:#F8F6FD;
+    --blockbg:#33246B;--blockink:#F1EDFC;
+    --ok:#1E7F4F;--okbg:#E8F5EE;--okline:#BFE3CE;
+    --hum:#935F00;--humbg:#FFF3DD;--humline:#EBD7A8;
+    --fut:#6E7387;--futbg:#F1F2F6;
+    --hdr1:#2A1D5E;--hdr2:#3E2B8A;--hdr3:#6741D9;--hdrink:#EFEAFD;--hdrink2:#CCBFF3;
+    --shadow:0 24px 60px -32px rgba(51,36,107,.20),0 2px 8px rgba(0,0,0,.03);
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#131320;--card:#1B1B2A;--ink:#EAE9F4;--ink2:#A7A5BF;--ink3:#7B7994;
+      --line:#2E2C44;--acc9:#CBBCF6;--acc7:#9775FA;--acc5:#8B6BE8;--acc1:#282146;--acc05:#211C38;
+      --blockbg:#2A2153;--blockink:#E7DFFC;
+      --ok:#4CC38A;--okbg:#1A2C22;--okline:#2C4A3A;
+      --hum:#E2B203;--humbg:#2C2513;--humline:#4A4022;
+      --fut:#8D91A8;--futbg:#20202F;
+      --hdr1:#1B1533;--hdr2:#2A1D5E;--hdr3:#4B34A0;--hdrink:#EFEAFD;--hdrink2:#B4A6E8;
+      --shadow:0 24px 60px -32px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.2);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#131320;--card:#1B1B2A;--ink:#EAE9F4;--ink2:#A7A5BF;--ink3:#7B7994;
+    --line:#2E2C44;--acc9:#CBBCF6;--acc7:#9775FA;--acc5:#8B6BE8;--acc1:#282146;--acc05:#211C38;
+    --blockbg:#2A2153;--blockink:#E7DFFC;
+    --ok:#4CC38A;--okbg:#1A2C22;--okline:#2C4A3A;
+    --hum:#E2B203;--humbg:#2C2513;--humline:#4A4022;
+    --fut:#8D91A8;--futbg:#20202F;
+    --hdr1:#1B1533;--hdr2:#2A1D5E;--hdr3:#4B34A0;--hdrink:#EFEAFD;--hdrink2:#B4A6E8;
+    --shadow:0 24px 60px -32px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.2);
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;padding:32px 16px 48px}
+  .scroller{overflow-x:auto}
+  .frame{width:1400px;margin:0 auto;background:var(--card);border:1px solid var(--line);
+    border-radius:22px;box-shadow:var(--shadow);overflow:hidden}
+  code,.mono{font-family:ui-monospace,"SF Mono",Consolas,Menlo,monospace}
+
+  .hd{position:relative;padding:28px 40px 24px;color:var(--hdrink);
+    background:linear-gradient(135deg,var(--hdr1) 0%,var(--hdr2) 55%,var(--hdr3) 100%);overflow:hidden}
+  .hd::before{content:"";position:absolute;right:-110px;top:-150px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.06)}
+  .hd::after{content:"";position:absolute;right:80px;bottom:-170px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.04)}
+  .hd .row{position:relative;display:flex;align-items:flex-end;justify-content:space-between;gap:24px;z-index:1}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border:1px solid rgba(255,255,255,.3);border-radius:999px;font-size:11px;letter-spacing:.14em;color:var(--hdrink2)}
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--hdrink2)}
+  .hd h1{margin:10px 0 6px;font-size:29px;font-weight:800;letter-spacing:-.02em;color:#fff}
+  .hd .sub{margin:0;color:var(--hdrink2);font-size:12.5px;max-width:960px;line-height:1.7}
+  .hd .chain{margin-top:8px;font-size:12.5px;color:#fff;font-weight:700}
+  .hd .chain b{color:#D9CDFB}
+  .legend{display:flex;flex-direction:column;gap:7px;font-size:11px;color:var(--hdrink2);white-space:nowrap}
+  .legend .item{display:inline-flex;align-items:center;gap:7px}
+  .sw{display:inline-block;width:14px;height:14px;border-radius:4px}
+  .sw.acc{background:#fff}
+  .sw.hum{background:#F3C24B}
+  .sw.dash{background:transparent;border:1.5px dashed rgba(255,255,255,.7)}
+
+  .sec{padding:26px 40px}
+  .sec + .sec{border-top:1px solid var(--line)}
+  .sec h2{margin:0 0 4px;font-size:16px;font-weight:800;color:var(--acc9)}
+  .sec .cap{margin:0 0 16px;font-size:12px;color:var(--ink2);line-height:1.7}
+
+  figure{margin:0}
+  figure svg{display:block;max-width:100%;height:auto;color:var(--ink)}
+  figcaption{margin-top:10px;font-size:12px;color:var(--ink2);line-height:1.7}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:14px}
+  .cell{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--acc05)}
+  .cell.kern{background:var(--acc1);border-color:var(--acc5)}
+  .cell h3{margin:0 0 6px;font-size:13.5px;font-weight:800;color:var(--acc9)}
+  .cell p{margin:0;font-size:12px;color:var(--ink2);line-height:1.75}
+  .cell .mono{font-size:11px;color:var(--ink3)}
+  .tag{display:inline-block;padding:2px 9px;border-radius:999px;font-size:10.5px;font-weight:700;margin-left:6px;vertical-align:1px}
+  .tag.ok{color:var(--ok);background:var(--okbg);border:1px solid var(--okline)}
+
+  ul.law{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:8px}
+  ul.law li{font-size:12.5px;color:var(--ink);line-height:1.65;padding-left:34px;position:relative}
+  ul.law li .no{position:absolute;left:0;top:1px;width:24px;height:24px;border-radius:8px;background:var(--acc1);
+    color:var(--acc7);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  ul.law li b{color:var(--acc9)}
+  .never{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .never span{font-size:11.5px;padding:6px 12px;border-radius:999px;background:var(--humbg);
+    border:1px solid var(--humline);color:var(--hum);font-weight:700}
+
+  .proof{display:flex;flex-wrap:wrap;gap:8px}
+  .proof span{font-size:11.5px;padding:6px 12px;border-radius:999px;background:var(--okbg);
+    border:1px solid var(--okline);color:var(--ok);font-weight:700}
+  .proof span.mono{font-weight:600}
+
+  .ft{padding:18px 40px 24px;border-top:1px solid var(--line);display:flex;justify-content:space-between;
+    gap:16px;font-size:11.5px;color:var(--ink3);flex-wrap:wrap}
+</style>
+
+<div class="scroller"><div class="frame">
+
+  <header class="hd">
+    <div class="row">
+      <div>
+        <span class="eyebrow"><span class="dot"></span>架构 v3 · SKILL 优先 · 2026-08-15 · 生产实测</span>
+        <h1>DataFoundry:harness 装技能,技能带登录</h1>
+        <p class="sub">训练数据的品控与归因层——让每一条数据的去留都有可辩护的理由。用户不"访问产品":
+        在自己的智能体工作台里装上四个技能文件,剧本就会驱动一切,包括注册与登录。
+        原生的是认知(租),确定的是裁决与账本(自有)。</p>
+        <p class="chain">主链:意图 →(AI)配方提案 →(<b>人</b>)授权 →(系统)精炼事实 —— AI 只进前两段,这条线就是安全线</p>
+      </div>
+      <div class="legend">
+        <span class="item"><span class="sw acc"></span>技能包 = 产品入口(论旨)</span>
+        <span class="item"><span class="sw hum"></span>人手环节:授权只属于人</span>
+        <span class="item"><span class="sw dash"></span>虚线 = 可选 / 只建议</span>
+      </div>
+    </div>
+  </header>
+
+  <section class="sec">
+    <h2>整体机制:机器流水平走,授权由人从上方插入</h2>
+    <p class="cap">从左到右是一次精炼的完整机器路径;两个琥珀色节点是仅有的人手环节——批准登录、扫码付款。其余一切可由智能体按剧本完成。</p>
+    <figure>
+      <svg viewBox="0 0 1320 470" role="img" aria-label="Skill 优先架构:用户 harness 装技能包,剧本直驱 REST 窄腰,经服务壳到零依赖内核,产出 append-only 事实文件;设备码批准与扫码支付两个人手环节从上方接入;MCP 为可选适配器;BYOK 判审只建议;控制台与技能只读回流事实">
+        <defs>
+          <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="currentColor"/>
+          </marker>
+          <marker id="arh" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0 0 L10 5 L0 10 z" fill="#C08A0B"/>
+          </marker>
+        </defs>
+
+        <!-- 人手环节(上层) -->
+        <g font-size="12">
+          <rect x="360" y="26" width="190" height="52" rx="12" fill="var(--humbg)" stroke="var(--humline)"/>
+          <text x="455" y="48" text-anchor="middle" fill="var(--hum)" font-weight="700">🧑 设备码批准</text>
+          <text x="455" y="66" text-anchor="middle" fill="var(--hum)" font-size="10.5">浏览器点一下,密码不经智能体</text>
+          <line x1="455" y1="78" x2="455" y2="148" stroke="#C08A0B" stroke-width="2" marker-end="url(#arh)"/>
+          <text x="465" y="120" fill="var(--hum)" font-size="10.5">授权登录</text>
+
+          <rect x="620" y="26" width="190" height="52" rx="12" fill="var(--humbg)" stroke="var(--humline)"/>
+          <text x="715" y="48" text-anchor="middle" fill="var(--hum)" font-weight="700">🧑 扫码支付</text>
+          <text x="715" y="66" text-anchor="middle" fill="var(--hum)" font-size="10.5">pay_url 交给人,钱只经人手</text>
+          <line x1="715" y1="78" x2="715" y2="148" stroke="#C08A0B" stroke-width="2" marker-end="url(#arh)"/>
+          <text x="725" y="120" fill="var(--hum)" font-size="10.5">授权花钱</text>
+        </g>
+
+        <!-- 主流程(中层) -->
+        <g font-size="12.5">
+          <!-- harness + 技能包 -->
+          <rect x="20" y="150" width="240" height="180" rx="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <text x="140" y="176" text-anchor="middle" font-weight="800">用户自己的 harness</text>
+          <text x="140" y="194" text-anchor="middle" font-size="10.5" opacity=".65">Claude Code · dsh · Codex</text>
+          <rect x="38" y="206" width="204" height="106" rx="10" fill="var(--acc7)"/>
+          <text x="140" y="228" text-anchor="middle" fill="#fff" font-weight="800">技能包 skills/</text>
+          <text x="140" y="248" text-anchor="middle" fill="#fff" font-size="11">onboard(注册+登录)</text>
+          <text x="140" y="266" text-anchor="middle" fill="#fff" font-size="11">refine(估算→授权→尸检)</text>
+          <text x="140" y="284" text-anchor="middle" fill="#fff" font-size="11">autopsy(数据集尸检)</text>
+          <text x="140" y="302" text-anchor="middle" fill="#fff" font-size="11">billing(只建单不代付)</text>
+
+          <!-- 剧本直驱 REST -->
+          <line x1="260" y1="220" x2="380" y2="220" stroke="currentColor" stroke-width="2" marker-end="url(#ar)"/>
+          <text x="320" y="208" text-anchor="middle" font-size="11" font-weight="700">剧本直驱 REST</text>
+          <line x1="260" y1="292" x2="380" y2="292" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+          <text x="320" y="312" text-anchor="middle" font-size="10.5" opacity=".65">MCP 可选适配器</text>
+
+          <!-- REST 窄腰 -->
+          <rect x="382" y="150" width="146" height="180" rx="14" fill="var(--acc1)" stroke="var(--acc5)" stroke-width="1.5"/>
+          <text x="455" y="176" text-anchor="middle" font-weight="800" fill="var(--acc9)">REST 窄腰④</text>
+          <text x="455" y="196" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".8">register / device</text>
+          <text x="455" y="213" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".8">estimate(免费)</text>
+          <text x="455" y="230" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".8">runs(扣费)</text>
+          <text x="455" y="247" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".8">rejects 死因</text>
+          <text x="455" y="264" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".8">output 交付</text>
+          <text x="455" y="281" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".8">orders → pay_url</text>
+          <text x="455" y="303" text-anchor="middle" font-size="10" fill="var(--acc9)" opacity=".6">窄腰之外,实现随便换</text>
+
+          <!-- service -->
+          <line x1="528" y1="240" x2="600" y2="240" stroke="currentColor" stroke-width="2" marker-end="url(#ar)"/>
+          <text x="564" y="228" text-anchor="middle" font-size="10.5">认证·扣费</text>
+          <rect x="602" y="150" width="226" height="180" rx="14" fill="none" stroke="currentColor" stroke-width="1.5"/>
+          <text x="715" y="178" text-anchor="middle" font-weight="800">service 服务壳</text>
+          <text x="715" y="200" text-anchor="middle" font-size="11" opacity=".75">API · RBAC · 限流 · 审计</text>
+          <text x="715" y="220" text-anchor="middle" font-size="11" opacity=".75">计费(PG 账本,幂等)</text>
+          <text x="715" y="240" text-anchor="middle" font-size="11" opacity=".75">失败自动全额退款</text>
+          <text x="715" y="260" text-anchor="middle" font-size="11" opacity=".75">只读控制台 /console</text>
+          <text x="715" y="282" text-anchor="middle" font-size="10.5" opacity=".55">死因首屏 · 老板版人话</text>
+          <text x="715" y="300" text-anchor="middle" font-size="10.5" opacity=".55">给"转发给老板"用</text>
+
+          <!-- kernel -->
+          <line x1="828" y1="240" x2="900" y2="240" stroke="currentColor" stroke-width="2" marker-end="url(#ar)"/>
+          <text x="864" y="228" text-anchor="middle" font-size="10.5">组装校验</text>
+          <rect x="902" y="150" width="226" height="180" rx="14" fill="var(--acc1)" stroke="var(--acc7)" stroke-width="2"/>
+          <text x="1015" y="178" text-anchor="middle" font-weight="800" fill="var(--acc9)">kernel 精炼内核</text>
+          <text x="1015" y="198" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".85">零第三方依赖 · 裁决权所在</text>
+          <text x="1015" y="220" text-anchor="middle" font-size="11" fill="var(--acc9)" opacity=".85">算子引擎(依赖契约)</text>
+          <text x="1015" y="240" text-anchor="middle" font-size="11" fill="var(--acc9)" opacity=".85">漏斗编译:便宜先杀</text>
+          <text x="1015" y="260" text-anchor="middle" font-size="11" fill="var(--acc9)" opacity=".85">验证器族:复算必错才杀</text>
+          <text x="1015" y="282" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".6">缺依赖=拒编译,响亮失败</text>
+          <text x="1015" y="300" text-anchor="middle" font-size="10.5" fill="var(--acc9)" opacity=".6">可嵌入 / 端侧 / 私有化</text>
+
+          <!-- 事实 -->
+          <line x1="1128" y1="240" x2="1198" y2="240" stroke="currentColor" stroke-width="2" marker-end="url(#ar)"/>
+          <text x="1163" y="228" text-anchor="middle" font-size="10.5">逐样本裁决</text>
+          <rect x="1200" y="150" width="100" height="180" rx="14" fill="var(--blockbg)"/>
+          <text x="1250" y="182" text-anchor="middle" fill="var(--blockink)" font-weight="800">事实</text>
+          <text x="1250" y="202" text-anchor="middle" fill="var(--blockink)" font-size="10" opacity=".85">append-only</text>
+          <text x="1250" y="226" text-anchor="middle" fill="var(--blockink)" font-size="10.5">幸存集</text>
+          <text x="1250" y="244" text-anchor="middle" fill="var(--blockink)" font-size="10.5">死因 rejects</text>
+          <text x="1250" y="262" text-anchor="middle" fill="var(--blockink)" font-size="10.5">manifest</text>
+          <text x="1250" y="280" text-anchor="middle" fill="var(--blockink)" font-size="10.5">判审标注</text>
+          <text x="1250" y="298" text-anchor="middle" fill="var(--blockink)" font-size="10.5">账本</text>
+        </g>
+
+        <!-- 下层:BYOK 与回流 -->
+        <g font-size="10.5">
+          <line x1="1015" y1="400" x2="1015" y2="332" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+          <rect x="905" y="402" width="220" height="40" rx="10" fill="none" stroke="currentColor" stroke-dasharray="6 5"/>
+          <text x="1015" y="419" text-anchor="middle" opacity=".75">BYOK 模型端点(判审 / 合成)</text>
+          <text x="1015" y="434" text-anchor="middle" opacity=".75">只建议,永不单独杀样本</text>
+
+          <path d="M1250 332 L1250 380 L140 380 L140 332" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="6 5" marker-end="url(#ar)"/>
+          <text x="640" y="372" text-anchor="middle" opacity=".75">尸检 · 评测 · 配方档案 —— 只读回流给智能体与人(下游永不反向调用)</text>
+        </g>
+      </svg>
+      <figcaption>一次精炼:装技能 → 剧本注册登录(人批准)→ 上传 → 估算免费 → 人点头才扣费 → 漏斗裁决 → 事实落盘 → 尸检与幸存集交付。
+      失败自动退款;死因、账本、指纹全部 append-only,可复核。</figcaption>
+    </figure>
+  </section>
+
+  <section class="sec">
+    <h2>代码三域 = 目录 = 发行边界<span class="tag ok">tests/test_domains 守护</span></h2>
+    <p class="cap">物理目录即架构,归类是设计动作:新模块不入域册,测试响亮失败。</p>
+    <div class="grid3">
+      <div class="cell kern">
+        <h3>kernel/ 精炼内核</h3>
+        <p>schema · 算子(依赖契约)· 漏斗编译器 · 执行器 · 配方 · 证据包。<b>纯标准库零第三方依赖</b>——
+        树莓派、离线机、私有化今天即可跑。<span class="mono">pip install datafoundry</span></p>
+      </div>
+      <div class="cell">
+        <h3>service/ 服务壳</h3>
+        <p>API · RBAC · 计费(PG 账本)· 限流 · 审计 · 只读控制台。
+        <span class="mono">pip install datafoundry[server]</span>,禁引 interface。</p>
+      </div>
+      <div class="cell">
+        <h3>interface/ 薄客户端</h3>
+        <p>CLI(本地离线流)与 MCP 适配器(可选)。只经 HTTP 窄腰访问服务,永不 import 服务内部。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="grid2">
+      <div class="cell">
+        <h3>五律(什么永远不变)</h3>
+        <ul class="law">
+          <li><span class="no">I1</span>每条处置必有可追溯<b>死因</b>(trace append-only)</li>
+          <li><span class="no">I2</span><b>裁决确定性</b>:同输入+同配方+同平台版本 → 同输出;AI 只建议</li>
+          <li><span class="no">I3</span>资金<b>唯一写入点</b>、同事务、幂等;失败退款双向留痕</li>
+          <li><span class="no">I4</span>对外数字必<b>可复现</b>(seed+sha256+run id),不可复现不外发</li>
+          <li><span class="no">I5</span><b>认知可替换</b>:任何 agent / 模型都是可插拔外设</li>
+        </ul>
+      </div>
+      <div class="cell">
+        <h3>安全线(四条"永不")</h3>
+        <p>四条窄腰(样本 schema · 算子协议 · 事实文件族 · REST 认知接入面)之外,一切实现可翻新。红线:</p>
+        <div class="never">
+          <span>判审永不单独杀样本</span>
+          <span>AI 永不动账本/放行交付</span>
+          <span>支付授权永不进智能体</span>
+          <span>Mission 只花人预授预算</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2>as-built:今天在生产上实测过的</h2>
+    <p class="cap">本图没有蓝图成分——每一个构件都在线上或测试中被验证过(2026-08-15)。</p>
+    <div class="proof">
+      <span>陌生人注册 → 登录拿 token(生产实测 200)</span>
+      <span>控制台门禁 401 契约(生产实测)</span>
+      <span>v0.2.0 线上 · PG 账本跨冷启动持单</span>
+      <span>失败 run 自动退款(测试固化)</span>
+      <span class="mono">140 tests 全绿</span>
+      <span>BELLE 尸检 4.04% 铁证(四轮仪器自检)</span>
+      <span>零 LLM 降级路径实测 62.5 分</span>
+    </div>
+  </section>
+
+  <footer class="ft">
+    <span>DataFoundry 架构 v3 · Skill 优先(docs/25 总纲 · docs/26 定案)· 图与代码不符视为缺陷</span>
+    <span>原生的是认知,确定的是裁决与账本</span>
+  </footer>
+
+</div></div>
