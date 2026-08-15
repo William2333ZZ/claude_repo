@@ -13,6 +13,8 @@
 """
 from __future__ import annotations
 
+import os
+
 import html
 import threading
 import urllib.parse
@@ -45,6 +47,11 @@ class UserBody(BaseModel):
     username: str
     password: str = Field(min_length=8)
     role: str = "engineer"
+
+
+class RegisterBody(BaseModel):
+    username: str = Field(min_length=3, max_length=32, pattern=r"^[a-zA-Z_][a-zA-Z0-9_]*$")  # 与 store.isidentifier 规则一致
+    password: str = Field(min_length=8)
 
 
 class KeyBody(BaseModel):
@@ -323,6 +330,20 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
 
     # ---------- 用户管理(admin) ----------
 
+    @app.post("/auth/register")
+    def register(body: RegisterBody):
+        # [docs/26 §3-A] Skill 优先:陌生人旅程第一幕。开放注册(env 可关),固定 engineer 角色,
+        # 全局限流中间件覆盖;体验额度为 0——estimate 本免费,付费前已可见价值
+        if os.environ.get("DATAFOUNDRY_OPEN_SIGNUP", "1").lower() not in ("1", "true", "yes"):
+            raise HTTPException(403, "注册未开放:请联系管理员开通账户")
+        try:
+            user = store.create_user(body.username, body.password, "engineer")
+        except ValueError as exc:  # store 统一以 ValueError 报重复/不合规
+            raise HTTPException(409 if "已存在" in str(exc) else 400, str(exc)) from None
+        store.audit(body.username, "register", "self-serve signup(engineer)")
+        return {"username": user["username"], "role": user["role"],
+                "next": "设备码登录:POST /auth/device/start,或 CLI `datafoundry login`"}
+
     @app.post("/users")
     def create_user(body: UserBody, admin: dict = Depends(require("admin"))):
         if body.role not in ("viewer", "engineer", "admin"):
@@ -589,6 +610,19 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
             raise HTTPException(404, "无此运行")
         store.audit(user["username"], "set_run_eval", f"{run_id} {body.evalset}={body.accuracy}")
         return {"run_id": run_id, "eval": block}
+
+    @app.get("/runs/{run_id}/output")
+    def run_output(run_id: str, user: dict = Depends(require("engineer"))):
+        # [docs/26 Skill 走查] 交付一步:幸存集下载——没有它,旅程 A 在最后一幕断掉
+        run = store.get_run(run_id)
+        if not run:
+            raise HTTPException(404, "无此运行")
+        path = store.runs_dir / run_id / "output.jsonl"
+        if not path.exists():
+            raise HTTPException(404, "该运行暂无产出(未完成或已失败)")
+        from fastapi.responses import FileResponse
+        return FileResponse(path, media_type="application/jsonl",
+                            filename=f"{run_id}_output.jsonl")
 
     @app.get("/runs/{run_id}/rejects")
     def run_rejects(run_id: str, n: int = Query(default=10, ge=1, le=100), _: dict = Depends(require("viewer"))):
