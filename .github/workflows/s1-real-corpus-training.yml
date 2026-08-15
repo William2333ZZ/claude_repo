@@ -1,0 +1,96 @@
+# [#24 S1] 真实语料对照训练:同一 19,999 条 BELLE 抽样集,raw(直接训)vs
+# refined(过 v3.1 漏斗再训),其余全同——同预算下,先杀掉 4%算错的解答,下游数学
+# 准确率 Δ=?复用 M1-C1 已验证过的 0.5B LoRA CPU 训练路径(experiment-cpu.yml 同款);
+# 多种子按 M1-C1 precedent 逐次触发(一次调用一个 seed),非单次内并发多种子。
+#
+# 许可纪律延续 real-corpus.yml:语料文本只活在 /tmp,产物(eval_report/generations)
+# 不含原始语料文本,可安全作为 artifact 上传。
+
+name: s1-real-corpus-training
+
+on:
+  workflow_dispatch:
+    inputs:
+      train_seed:
+        description: "训练种子(复验用;语料抽样种子固定=42,不在此调)"
+        default: "42"
+        required: true
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --quiet -e .
+      - name: 抽样(复现 S0)+ 漏斗产出 raw/refined 两个训练视图
+        run: python experiments/s1_real_math/prepare_corpus.py --out /tmp/s1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: s1-corpus
+          path: |
+            /tmp/s1/raw.jsonl
+            /tmp/s1/refined.jsonl
+          retention-days: 7
+
+  train-eval:
+    needs: prepare
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    strategy:
+      fail-fast: false
+      matrix:
+        arm: [raw, refined]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps (CPU torch)
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet "transformers>=4.44" "peft>=0.12" accelerate
+          pip install --quiet -e .
+      - uses: actions/download-artifact@v4
+        with:
+          name: s1-corpus
+          path: /tmp/s1
+      - name: Train + eval (0.5B LoRA, CPU;协议与 M1-C1 完全一致,零改动脚本)
+        env:
+          TRAIN_SEED: ${{ inputs.train_seed }}
+        run: |
+          python scripts/train_cpu_proxy.py \
+            --data /tmp/s1/${{ matrix.arm }}.jsonl \
+            --out experiments/s1_real_math/results/${{ matrix.arm }}_s${{ inputs.train_seed }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: s1-result-${{ matrix.arm }}-s${{ inputs.train_seed }}
+          path: |
+            experiments/s1_real_math/results/${{ matrix.arm }}_s${{ inputs.train_seed }}/eval_report.json
+            experiments/s1_real_math/results/${{ matrix.arm }}_s${{ inputs.train_seed }}/generations.jsonl
+
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install deps (CPU torch)
+        run: |
+          pip install --quiet torch --index-url https://download.pytorch.org/whl/cpu
+          pip install --quiet "transformers>=4.44" "peft>=0.12" accelerate
+          pip install --quiet -e .
+      - name: Eval untrained base model(与 M1-C1 同基座同评测集,复用一份即可,非按种子重跑)
+        run: |
+          python scripts/train_cpu_proxy.py --skip-train \
+            --data evalsets/math_zh_v1.jsonl \
+            --out experiments/s1_real_math/results/baseline
+      - uses: actions/upload-artifact@v4
+        with:
+          name: s1-result-baseline
+          path: experiments/s1_real_math/results/baseline/eval_report.json
