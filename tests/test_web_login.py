@@ -53,3 +53,18 @@ def test_token_expiry_and_bad_token(tmp_path):
 def test_web_login_requires_auth(tmp_path):
     _, client, _ = _client_with_key(tmp_path)
     assert client.post("/auth/web-login").status_code == 401
+
+
+def test_session_cookie_authenticates_general_rest(tmp_path):
+    """docs/30 §3:前端反代靠 df_session cookie 认证,不只 /console——补齐后 /datasets 等
+    通用 REST 端点也必须认 cookie,否则「同源反代」设计名存实亡(建端点前先证明这条通)。"""
+    store, client, key = _client_with_key(tmp_path)
+    login_path = client.post("/auth/web-login", headers={"X-API-Key": key}).json()["login_path"]
+    session = client.get(login_path, follow_redirects=False).cookies["df_session"]
+    r = client.get("/datasets", cookies={"df_session": session})
+    assert r.status_code == 200 and r.json() == []
+    client.cookies.clear()  # TestClient 会持久化 cookie jar,负例前显式清空避免残留
+    # 无 cookie、无 header 一律 401(未认证的默认状态不变)
+    assert client.get("/datasets").status_code == 401
+    # 伪造/损坏的 cookie 值同样拒绝,不能绕过签名校验
+    assert client.get("/datasets", cookies={"df_session": "garbage"}).status_code == 401

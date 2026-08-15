@@ -6,6 +6,12 @@ const API = process.env.DF_API_BASE || "https://datafoundry.onrender.com";
 /** @type {import('next').NextConfig} */
 export default {
   async rewrites() {
-    return [{ source: "/df/:path*", destination: `${API}/:path*` }];
+    return [
+      { source: "/df/:path*", destination: `${API}/:path*` },
+      // 设备码授权页是后端的内核兜底页(docs/29 §3.5),同源转发以维持
+      // 「浏览器全程同源」原则——否则登录页里的 /device 链接会跳出看板域。
+      { source: "/device", destination: `${API}/device` },
+      { source: "/device/decide", destination: `${API}/device/decide` },
+    ];
   },
 };

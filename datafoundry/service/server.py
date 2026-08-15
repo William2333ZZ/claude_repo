@@ -34,7 +34,7 @@ from datafoundry.service.ratelimit import LoginGuard, SlidingWindow, client_key
 from datafoundry.kernel.recipes import get_recipe, list_recipes, missing_requirements, recipe_hash, recipe_steps
 from datafoundry.kernel.registry import catalog
 from datafoundry.kernel.runner import load_jsonl, run_pipeline
-from datafoundry.service.security import create_token, parse_token, role_rank
+from datafoundry.service.security import create_token, parse_token, payload_to_user, role_rank, user_from_session_cookie
 from datafoundry.service.store import Store
 
 
@@ -139,9 +139,12 @@ def create_app(store: Store | None = None) -> FastAPI:
     # ---------- 认证 ----------
 
     def current_user(
+        request: Request,
         authorization: str | None = Header(default=None),
         x_api_key: str | None = Header(default=None),
     ) -> dict:
+        # 三种载体,同一签发源:X-API-Key(智能体/CLI)· Bearer(显式持token者)·
+        # df_session cookie(浏览器同源请求,docs/30 §3——反代 BFF 要求 REST 认前端会话)
         if x_api_key:
             user = store.resolve_api_key(x_api_key)
             if user:
@@ -150,8 +153,11 @@ def create_app(store: Store | None = None) -> FastAPI:
         if authorization and authorization.startswith("Bearer "):
             payload = parse_token(store.secret, authorization[7:])
             if payload:
-                return {"id": payload["uid"], "username": payload["sub"], "role": payload["role"]}
+                return payload_to_user(payload)
             raise HTTPException(401, "令牌无效或已过期,请重新登录")
+        cookie_user = user_from_session_cookie(store.secret, request.cookies.get("df_session"))
+        if cookie_user:
+            return cookie_user
         raise HTTPException(401, "未认证:提供 Authorization: Bearer <token> 或 X-API-Key")
 
     def require(min_role: str):

@@ -17,7 +17,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from datafoundry.kernel.audit import death_cause_stats
-from datafoundry.service.security import parse_token
+from datafoundry.service.security import user_from_session_cookie
 
 # 死因的人话对照(老板版):算子名 → 一句谁都能懂的话
 GLOSS = {
@@ -83,12 +83,11 @@ def build_router(store) -> APIRouter:
     router = APIRouter()
 
     def console_user(request: Request) -> dict:
-        # 会话 cookie 优先(harness 免密直登发放,docs/28);HTTP Basic 保留到 30-A 退役
-        session = request.cookies.get("df_session")
-        if session:
-            payload = parse_token(store.secret, session)
-            if payload:
-                return {"id": payload["uid"], "username": payload["sub"], "role": payload["role"]}
+        # 会话 cookie 优先(harness 免密直登发放,docs/28;与 server.py current_user 同一
+        # 判定函数,docs/30 §3);HTTP Basic 保留到 30-A 退役
+        cookie_user = user_from_session_cookie(store.secret, request.cookies.get("df_session"))
+        if cookie_user:
+            return cookie_user
         hdr = request.headers.get("authorization", "")
         if hdr.lower().startswith("basic "):
             try:

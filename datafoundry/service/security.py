@@ -89,6 +89,19 @@ def parse_token(secret: bytes, token: str) -> dict | None:
     return payload
 
 
+def payload_to_user(payload: dict) -> dict:
+    return {"id": payload["uid"], "username": payload["sub"], "role": payload["role"]}
+
+
+def user_from_session_cookie(secret: bytes, cookie_value: str | None) -> dict | None:
+    """df_session cookie → user,浏览器同源请求的认证桥(docs/30 §3 修订)。
+    与 Bearer 令牌同源同签(create_token 签发),只是载体从 header 换成 cookie。"""
+    if not cookie_value:
+        return None
+    payload = parse_token(secret, cookie_value)
+    return payload_to_user(payload) if payload else None
+
+
 # ---------- API Key ----------
 
 def new_api_key() -> tuple[str, str]:

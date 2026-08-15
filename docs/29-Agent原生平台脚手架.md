@@ -197,7 +197,7 @@ project/
 | 死因人话(语言即界面) | service/console.py GLOSS · docs/14 §11 |
 | 方言漏斗双后端 | store `_sql/_txn` · tests 双后端矩阵 |
 | 防腐层五座 | docs/22 §2(引擎/支付/存储/认知/跑器) |
-| 看板外壳 Next.js | docs/13 外壳框架 ADR · `web/` 骨架(同域反代/中间件/GLOSS)· web-build CI ✅ · 页面在建 #30 🔶 |
+| 看板外壳 Next.js | docs/13 外壳框架 ADR · docs/30 前后端架构 · `web/` 登录页(Server Action)+ 总览页(SSR)✅ · 认证桥(cookie/Bearer 双认)✅ · web-build CI ✅ |
 
 ---
 
