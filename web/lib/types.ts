@@ -90,16 +90,35 @@ export interface RejectSample {
   trace?: TraceStep[];
 }
 
+// 字段名对齐 store.recipe_history 的真实返回(run_id,非 id——手镜像的教训,
+// 见 docs/30 §7「前端类型手镜像,非生成」debt:先读源码再写字段,别靠猜)
 export interface RecipeRun {
-  id: string;
+  run_id: string;
   dataset_id: string;
   status: RunStatus;
   created_at: number;
   recipe_hash?: string;
   n_in?: number;
   n_out?: number;
+  retention?: number;
   est_cost_total?: number;
   eval_accuracy?: number;
+  evalset?: string;
+}
+
+export interface RecipeHistory {
+  recipe: string;
+  current_hash: string;
+  runs: RecipeRun[];
+}
+
+export interface RecipeSummary {
+  name: string;
+  version: string;
+  hash: string;
+  title: string;
+  scenario: string;
+  requires?: string[];
 }
 
 export interface ApiError {
