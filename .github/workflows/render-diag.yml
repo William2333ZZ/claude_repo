@@ -1,11 +1,41 @@
-# 一次性诊断:拉取 Render 服务最近部署清单与构建日志(排障用,不改任何状态)
+# 运维诊断:Render 部署清单/构建日志 + 生产探针(健康/注册/登录冒烟)
 name: render-diag
 
 on:
   workflow_dispatch:
+    inputs:
+      probe:
+        description: "probe=1 时对生产打注册+登录探针(walkthrough_probe_<run> 用户,随机密码)"
+        default: "0"
+        required: false
 
 jobs:
+  probe:
+    if: ${{ inputs.probe == '1' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Health + register + login smoke
+        run: |
+          BASE=https://datafoundry.onrender.com
+          echo "== /health =="; curl -sS -m 60 $BASE/health; echo
+          U="walkthrough_probe_${GITHUB_RUN_NUMBER}"
+          P=$(openssl rand -hex 12)
+          echo "== register $U =="
+          code=$(curl -sS -o /tmp/reg.json -w '%{http_code}' -X POST $BASE/auth/register \
+            -H 'Content-Type: application/json' -d "{\"username\": \"$U\", \"password\": \"$P\"}")
+          echo "HTTP $code"; cat /tmp/reg.json; echo
+          echo "== login =="
+          code2=$(curl -sS -o /tmp/login.json -w '%{http_code}' -X POST $BASE/auth/login \
+            -H 'Content-Type: application/json' -d "{\"username\": \"$U\", \"password\": \"$P\"}")
+          echo "HTTP $code2"; python3 -c "import json; d=json.load(open('/tmp/login.json')); print('token_present:', bool(d.get('token')), '| role:', d.get('role'))" || cat /tmp/login.json
+          echo "== console 401 契约 =="
+          curl -sS -o /dev/null -w 'console_unauth: %{http_code}\n' $BASE/console
+          test "$code" = "200" -a "$code2" = "200"
+          echo "探针用户 $U 留存于生产(引导版画像见审计日志);管理员可随时删除"
+
   diag:
+    if: ${{ inputs.probe != '1' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
