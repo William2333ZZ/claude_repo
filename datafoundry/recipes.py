@@ -10,6 +10,8 @@ run_pipeline)、可携证据(provenance 记录该组合在哪个实验里被验�
 from __future__ import annotations
 
 import copy
+import hashlib
+import json
 import os
 
 from datafoundry.pipeline import validate_steps
@@ -80,11 +82,22 @@ def missing_requirements(name: str) -> list[str]:
     return [r for r in RECIPES[name]["requires"] if r == "llm" and not llm_configured()]
 
 
+def recipe_hash(name: str) -> str:
+    """[M2-F2] 配方内容指纹:steps 的规范化 JSON(键排序)→ sha256 前 12 位。
+    参数字典序不影响 hash;steps 内容一变 hash 即变——效果档案按它聚合,
+    「所见即所签」的授权对象也是它(docs/21 主链③)。"""
+    if name not in RECIPES:
+        raise KeyError(f"未知配方 {name!r}(可用: {', '.join(RECIPES)})")
+    canon = json.dumps(RECIPES[name]["steps"], ensure_ascii=False, sort_keys=True)
+    return hashlib.sha256(canon.encode("utf-8")).hexdigest()[:12]
+
+
 def list_recipes() -> list[dict]:
     return [
         {
             "name": name,
             "version": r["version"],
+            "hash": recipe_hash(name),
             "title": r["title"],
             "scenario": r["scenario"],
             "requires": r["requires"],
@@ -98,7 +111,7 @@ def list_recipes() -> list[dict]:
 def get_recipe(name: str) -> dict:
     if name not in RECIPES:
         raise KeyError(f"未知配方 {name!r}(可用: {', '.join(RECIPES)})")
-    return {"name": name, **copy.deepcopy(RECIPES[name])}
+    return {"name": name, "hash": recipe_hash(name), **copy.deepcopy(RECIPES[name])}
 
 
 def recipe_steps(name: str) -> list[dict]:

@@ -467,6 +467,39 @@ class Store:
         )
         return True
 
+    def recipe_history(self, recipe_name: str) -> list[dict]:
+        """[M2-F2] 配方效果档案:该配方名下全部 run 的 (数据集, 指纹, 计数, 成本, 评测) 记录。
+        LIKE 先粗筛(SQLite/PG 通吃),Python 精确核对 manifest 字段;含历史 hash(配方
+        内容变更后旧 run 仍按当时 hash 记录,档案自然呈现版本演化)。"""
+        rows = self._query(
+            "SELECT id, dataset_id, status, created_at, manifest_json FROM runs "
+            "WHERE manifest_json LIKE ? ORDER BY created_at DESC",
+            (f'%"recipe_name": "{recipe_name}"%',),
+        )
+        out = []
+        for r in rows:
+            try:
+                m = json.loads(r["manifest_json"] or "{}")
+            except json.JSONDecodeError:
+                continue
+            if m.get("recipe_name") != recipe_name:
+                continue
+            ev = m.get("eval") or {}
+            out.append({
+                "run_id": r["id"],
+                "dataset_id": r["dataset_id"],
+                "status": r["status"],
+                "created_at": r["created_at"],
+                "recipe_hash": m.get("recipe_hash"),
+                "n_in": m.get("n_in"),
+                "n_out": m.get("n_out"),
+                "retention": m.get("retention"),
+                "est_cost_total": m.get("est_cost_total"),
+                "eval_accuracy": ev.get("accuracy"),
+                "evalset": ev.get("evalset"),
+            })
+        return out
+
     def list_runs(self) -> list[dict]:
         return [
             dict(r)

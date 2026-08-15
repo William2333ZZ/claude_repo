@@ -121,6 +121,15 @@ TOOLS: list[dict] = [
         },
     },
     {
+        "name": "df_recipe_history",
+        "description": "配方效果档案:该配方跨数据集的历史 run(计数/成本/评测分/hash 演化)——同配方在哪些数据上跑出过什么效果",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"name": {"type": "string", "description": "配方名(见 df_list_recipes)"}},
+            "required": ["name"],
+        },
+    },
+    {
         "name": "df_estimate_pipeline",
         "description": "流水线成本预估:漏斗重排后的顺序、朴素 vs 漏斗成本对比、预期留存。先估后跑",
         "inputSchema": {
@@ -176,6 +185,8 @@ def dispatch_tool(client: ApiClient, name: str, args: dict):
         if args.get("name"):
             return client.call("GET", f"/recipes/{urllib.parse.quote(args['name'])}")
         return client.call("GET", "/recipes")
+    if name == "df_recipe_history":
+        return client.call("GET", f"/recipes/{urllib.parse.quote(args['name'])}/history")
     if name == "df_estimate_pipeline":
         return client.call("POST", "/pipelines/estimate", body={"dataset_id": args["dataset_id"], "steps": args["steps"]})
     if name == "df_run_pipeline":

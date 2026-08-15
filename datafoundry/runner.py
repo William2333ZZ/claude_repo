@@ -98,6 +98,7 @@ def run_pipeline(
     text_key: str = "text",
     funnel: bool = True,
     chunk_size: int | None = None,
+    manifest_extra: dict | None = None,
 ) -> dict:
     errors = validate_steps(steps)
     if errors:
@@ -199,6 +200,8 @@ def run_pipeline(
         "rejects": str(rejects_path),
         "chunk_size": chunk_size,
     }
+    if manifest_extra:  # [M2-F2] 调用方注入配方标识等溯源字段(recipe_name/recipe_hash)
+        manifest.update(manifest_extra)
     if read_stats["skipped"]:
         manifest["skipped_lines"] = read_stats["skipped"]
     if judge_count:

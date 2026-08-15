@@ -198,6 +198,34 @@ def cmd_recipes(args: argparse.Namespace) -> int:
     import datafoundry.ops  # noqa: F401
     from datafoundry.recipes import get_recipe, list_recipes, missing_requirements
 
+    if args.name and getattr(args, "history", False):
+        # [M2-F2] 效果档案在平台侧(runs 存在 store):经已登录凭据查 API
+        from datafoundry.credentials import load_credentials
+
+        creds = load_credentials()
+        if not creds:
+            print("查看效果档案需先登录平台: datafoundry login <url>", file=sys.stderr)
+            return 1
+        import urllib.request
+
+        req = urllib.request.Request(
+            f"{creds['url'].rstrip('/')}/recipes/{args.name}/history",
+            headers={"X-API-Key": creds["api_key"]},
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=30) as resp:
+                data = json.loads(resp.read())
+        except Exception as exc:
+            print(f"查询失败: {exc}", file=sys.stderr)
+            return 1
+        print(f"== 配方 {data['recipe']} 效果档案(当前 hash {data['current_hash']})==")
+        for r in data["runs"]:
+            ev = f" 评测 {r['eval_accuracy']}({r['evalset']})" if r.get("eval_accuracy") is not None else ""
+            print(f"{r['run_id']}  {r['status']:<9} 数据集 {r['dataset_id']}  "
+                  f"{r['n_in']}→{r['n_out']} 成本 {r['est_cost_total']} hash {r['recipe_hash']}{ev}")
+        if not data["runs"]:
+            print("(暂无历史 run)")
+        return 0
     if args.name:
         try:
             recipe = get_recipe(args.name)
@@ -317,6 +345,7 @@ def main(argv: list[str] | None = None) -> int:
 
     p = sub.add_parser("recipes", help="列出命名配方(简单算子的组合+实验证据);带名字看完整定义")
     p.add_argument("name", nargs="?", default=None)
+    p.add_argument("--history", action="store_true", help="查看该配方的跨数据集效果档案(需已登录平台)")
     p.set_defaults(func=cmd_recipes)
 
     p = sub.add_parser("refine", help="一条命令跑配方:JSONL 进 -> 估成本 -> 漏斗执行 -> 报告(离线)")

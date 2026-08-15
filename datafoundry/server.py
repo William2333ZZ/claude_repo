@@ -29,7 +29,7 @@ from datafoundry.engines import ENGINES, engine_status
 from datafoundry.pipeline import estimate as pipeline_estimate
 from datafoundry.pipeline import validate_steps
 from datafoundry.ratelimit import LoginGuard, SlidingWindow, client_key
-from datafoundry.recipes import get_recipe, list_recipes, missing_requirements, recipe_steps
+from datafoundry.recipes import get_recipe, list_recipes, missing_requirements, recipe_hash, recipe_steps
 from datafoundry.registry import catalog
 from datafoundry.runner import load_jsonl, run_pipeline
 from datafoundry.security import create_token, parse_token, role_rank
@@ -410,6 +410,15 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
         except KeyError as exc:
             raise HTTPException(404, str(exc.args[0]))
 
+    @app.get("/recipes/{name}/history")
+    def recipes_history(name: str, _: dict = Depends(require("viewer"))):
+        """[M2-F2] 配方效果档案:跨数据集的 (run, 计数, 成本, 评测) 历史,含 hash 演化。"""
+        try:
+            current = recipe_hash(name)
+        except KeyError as exc:
+            raise HTTPException(404, str(exc.args[0]))
+        return {"recipe": name, "current_hash": current, "runs": store.recipe_history(name)}
+
     @app.post("/pipelines/estimate")
     def estimate(body: EstimateBody, _: dict = Depends(require("viewer"))):
         ds = store.get_dataset(body.dataset_id)
@@ -501,7 +510,11 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
         out_dir = store.runs_dir / run_id
         try:
             if body.engine == "native":
-                manifest = run_pipeline(ds["path"], body.steps, out_dir, funnel=body.funnel)
+                extra = None
+                if body.recipe_name:  # [M2-F2] 配方标识入 manifest:效果档案按 hash 聚合
+                    extra = {"recipe_name": body.recipe_name, "recipe_hash": recipe_hash(body.recipe_name)}
+                manifest = run_pipeline(ds["path"], body.steps, out_dir, funnel=body.funnel,
+                                        manifest_extra=extra)
             else:
                 manifest = ENGINES[body.engine].run(ds["path"], out_dir, body.recipe or {})
             store.set_run_status(run_id, "succeeded", manifest=manifest)
