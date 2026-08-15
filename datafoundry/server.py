@@ -181,12 +181,12 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--muted)}
 <path d="M268 316 L756 316 L546 574 L546 668 L478 668 L478 574 Z" fill="#fff" stroke="#fff" stroke-width="26" stroke-linejoin="round"/>
 <path d="M512 726 C542 766 574 800 574 836 A62 62 0 1 1 450 836 C450 800 482 766 512 726 Z" fill="#9775FA"/></svg></div>
 <h1>DataFoundry 数据精炼平台</h1>
-<p class="tag">面向 AI 团队:清洗、去重、验证与合成训练数据,让同样的算力预算换来更高的评测分数。</p>
+<p class="tag">你有一批要拿去训模型的数据,但不确定它值不值得训。把它交给我们:跑之前告诉你花多少、能剩多少;跑之后每条数据的去留都有理由——比你自己想的更周全,拿去交差更有底气。</p>
 <div class="grid">
-<div class="card"><b>漏斗编排</b><span>便宜算子先杀掉九成噪声,昂贵判审只看幸存者,成本预估先行</span></div>
-<div class="card"><b>硬验证器</b><span>答案核验等验证算子,实测对错误样本零放行、对干净样本零误杀</span></div>
-<div class="card"><b>全程血缘</b><span>每条样本的去留与死因可追溯,产出即审计凭证</span></div>
-<div class="card"><b>评测回流</b><span>数据训练后的评测分数写回产线,质量闭环可归因</span></div>
+<div class="card"><b>先算账,再干活</b><span>上传即出成本与预期留存,不花冤枉钱;便宜检查先做,贵的 AI 判审只看幸存者</span></div>
+<div class="card"><b>连它自己写错的算式都点名</b><span>验证器逐条复算数据里的每个断言,错的直接出示证据——实测公开数据集也照抓</span></div>
+<div class="card"><b>能交差的报告</b><span>每条被删数据都有死因;合规审计报告(TC260 / EU AI Act)拿去向老板和监管交待</span></div>
+<div class="card"><b>越用越聪明</b><span>配方档案记住"什么数据用什么方、效果几分",下次一键复用,不必重新踩坑</span></div>
 </div>
 <a class="cta p" href="/device">登录 / 设备授权</a>
 <a class="cta s" href="/docs">API 文档</a>
