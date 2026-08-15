@@ -41,7 +41,7 @@ def _top_level_imports(path: Path):
 
 
 def _df_member(name: str) -> str:
-    """datafoundry.kernel.runner → runner;datafoundry.kernel.runner(旧路径)→ runner。"""
+    """datafoundry.kernel.runner → runner(域路径取第三段,兼容两段形式)。"""
     parts = name.split(".")
     if len(parts) >= 3 and parts[1] in DOMAIN_DIR:
         return parts[2]
