@@ -1,5 +1,8 @@
 # 06 · CLI 登录流程：feishu-cli / taptap 调研与 DataFoundry 实现
 
+> 📌 现状注记(2026-08-15):本文所述设备授权流**仍是现行实现**(且已成为 onboard 技能的登录剧本底座,docs/26 §1);唯模块路径已随 v0.2 拆包迁至 `datafoundry/interface/`(cli.py / credentials.py)。
+
+
 > 任务：调研 feishu-cli、taptap-cli 等工具的登录流程,并在 DataFoundry 上实践。
 > 结论:两家收敛到同一个模式——**OAuth 2.0 设备授权流(RFC 8628)+ 本地凭据缓存 + 环境变量优先级**。
 > 已在平台落地:服务端 3 个设备授权端点 + 浏览器授权页,CLI 新增 `login / whoami / logout`,
