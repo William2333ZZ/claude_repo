@@ -104,3 +104,25 @@ def test_stripe_signature_scheme(monkeypatch):
     stale = str(int(time.time()) - 9999)
     stale_sig = hmac.new(b"whsec_test", f"{stale}.".encode() + body, hashlib.sha256).hexdigest()
     assert p.parse_webhook({"stripe-signature": f"t={stale},v1={stale_sig}"}, body) is None
+
+
+def test_failed_run_refunds_credits(env, monkeypatch):
+    # [docs/24 Q5] 失败的精炼不是交付,不收钱:执行异常 → 同额退回,账本留双向痕迹
+    client, admin, eng = env
+    client.post("/billing/grant?username=eng&credits=100&reason=test", headers=admin)
+    ds = client.post("/datasets/upload?name=r", content=JSONL, headers=eng).json()
+
+    def boom(*a, **k):
+        raise RuntimeError("模拟执行失败")
+
+    monkeypatch.setattr("datafoundry.service.server.run_pipeline", boom)
+    run = client.post("/runs", json={"name": "r1", "dataset_id": ds["id"],
+                                     "steps": [{"op": "length_filter"}]}, headers=eng).json()
+    import time
+    for _ in range(50):
+        cur = client.get(f"/runs/{run['id']}", headers=eng).json()
+        if cur["status"] == "failed":
+            break
+        time.sleep(0.1)
+    assert cur["status"] == "failed"
+    assert client.get("/billing/me", headers=eng).json()["balance"] == 100

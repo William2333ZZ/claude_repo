@@ -26,6 +26,7 @@ import os
 import time
 from pathlib import Path
 
+from datafoundry import __version__
 from datafoundry.kernel.pipeline import build_ops, funnel_compile, stat_flow_errors, validate_steps
 from datafoundry.kernel.registry import OPS
 from datafoundry.kernel.schema import coerce_sample
@@ -191,6 +192,8 @@ def run_pipeline(
     ]
     manifest = {
         "dataset": str(dataset_path),
+        "platform_version": __version__,  # [docs/24 Q3] 配方 hash 只固定 steps,不固定算子实现;
+        # 「同输入+同配方→同输出」(I2)只在同平台版本内成立,故版本必须入事实记录
         "steps_requested": steps,
         "steps_executed": [s["op"] for s in ordered],
         "funnel_moves": moves,

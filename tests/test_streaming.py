@@ -107,3 +107,13 @@ def test_memory_flat_across_dataset_sizes(tmp_path):
 
     small, big = peak(20_000), peak(60_000)
     assert big < small * 1.6, f"内存未解耦: 2万={small} 6万={big}"
+
+
+def test_manifest_records_platform_version(tmp_path):
+    # [docs/24 Q3] 配方 hash 只固定 steps,不固定算子实现;版本入事实记录,I2 才完整
+    from datafoundry import __version__
+    from datafoundry.kernel.runner import run_pipeline
+    src = tmp_path / "in.jsonl"
+    src.write_text('{"text": "这是一条足够长的测试样本文本内容"}\n', encoding="utf-8")
+    m = run_pipeline(src, [{"op": "length_filter", "params": {"min_len": 5}}], tmp_path / "out")
+    assert m["platform_version"] == __version__

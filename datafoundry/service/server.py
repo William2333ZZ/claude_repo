@@ -506,7 +506,7 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
 
     # ---------- 运行 ----------
 
-    def _execute(run_id: str, body: RunBody, ds: dict) -> None:
+    def _execute(run_id: str, body: RunBody, ds: dict, refund_user_id: int | None = None) -> None:
         out_dir = store.runs_dir / run_id
         try:
             if body.engine == "native":
@@ -520,6 +520,9 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
             store.set_run_status(run_id, "succeeded", manifest=manifest)
         except Exception as exc:  # 失败必须落库,不能让 run 卡在 running
             store.set_run_status(run_id, "failed", error=f"{type(exc).__name__}: {exc}")
+            if refund_user_id is not None:  # [docs/24 Q5] 失败的精炼不是交付,不收钱:同额退回,账本留双向痕迹
+                store.add_credits(refund_user_id, ds["n_samples"], f"refund:{run_id}")
+                store.audit("system", "run_refund", f"{run_id} +{ds['n_samples']} credits")
 
     @app.post("/runs")
     def create_run(body: RunBody, user: dict = Depends(require("engineer"))):
@@ -553,11 +556,13 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
                     402, f"额度不足:本次需 {ds['n_samples']},余额 {balance}。请购买套餐或联系管理员上账"
                 )
         run = store.create_run(body.name, body.dataset_id, body.steps, user["username"])
-        if billing_enabled() and role_rank(user["role"]) < role_rank("admin"):
+        charged = billing_enabled() and role_rank(user["role"]) < role_rank("admin")
+        if charged:
             store.add_credits(user["id"], -ds["n_samples"], f"run:{run['id']}")
         store.audit(user["username"], "create_run", f"{run['id']} engine={body.engine} ds={body.dataset_id}")
         store.set_run_status(run["id"], "running")
-        threading.Thread(target=_execute, args=(run["id"], body, ds), daemon=True).start()
+        threading.Thread(target=_execute, args=(run["id"], body, ds, user["id"] if charged else None),
+                         daemon=True).start()
         return {"id": run["id"], "status": "running"}
 
     @app.get("/runs")
