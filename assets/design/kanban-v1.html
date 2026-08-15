@@ -1,0 +1,369 @@
+<title>DataFoundry 看板平台</title>
+<style>
+  :root{
+    --bg:#F7F7FA;--card:#FFFFFF;--ink:#1B2430;--ink2:#5C6672;--ink3:#8A8FA3;
+    --line:#E4E2EE;--acc9:#33246B;--acc7:#6741D9;--acc5:#8B6BE8;--acc1:#EFEBFB;--acc05:#F8F6FD;
+    --blockbg:#33246B;--blockink:#F1EDFC;
+    --ok:#1E7F4F;--okbg:#E8F5EE;--okline:#BFE3CE;
+    --hum:#935F00;--humbg:#FFF3DD;--humline:#EBD7A8;
+    --kill:#B5443B;--killbg:#FBF1F0;--killtrack:#F0E4E3;
+    --fut:#6E7387;--futbg:#F1F2F6;
+    --hdr1:#2A1D5E;--hdr2:#3E2B8A;--hdr3:#6741D9;--hdrink:#EFEAFD;--hdrink2:#CCBFF3;
+    --shadow:0 24px 60px -32px rgba(51,36,107,.20),0 2px 8px rgba(0,0,0,.03);
+    --phone:#FBFBFD;
+  }
+  @media (prefers-color-scheme:dark){
+    :root:not([data-theme="light"]){
+      --bg:#131320;--card:#1B1B2A;--ink:#EAE9F4;--ink2:#A7A5BF;--ink3:#7B7994;
+      --line:#2E2C44;--acc9:#CBBCF6;--acc7:#9775FA;--acc5:#8B6BE8;--acc1:#282146;--acc05:#211C38;
+      --blockbg:#2A2153;--blockink:#E7DFFC;
+      --ok:#4CC38A;--okbg:#1A2C22;--okline:#2C4A3A;
+      --hum:#E2B203;--humbg:#2C2513;--humline:#4A4022;
+      --kill:#E5695D;--killbg:#2E1B1A;--killtrack:#3A2523;
+      --fut:#8D91A8;--futbg:#20202F;
+      --hdr1:#1B1533;--hdr2:#2A1D5E;--hdr3:#4B34A0;--hdrink:#EFEAFD;--hdrink2:#B4A6E8;
+      --shadow:0 24px 60px -32px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.2);
+      --phone:#15151F;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#131320;--card:#1B1B2A;--ink:#EAE9F4;--ink2:#A7A5BF;--ink3:#7B7994;
+    --line:#2E2C44;--acc9:#CBBCF6;--acc7:#9775FA;--acc5:#8B6BE8;--acc1:#282146;--acc05:#211C38;
+    --blockbg:#2A2153;--blockink:#E7DFFC;
+    --ok:#4CC38A;--okbg:#1A2C22;--okline:#2C4A3A;
+    --hum:#E2B203;--humbg:#2C2513;--humline:#4A4022;
+    --kill:#E5695D;--killbg:#2E1B1A;--killtrack:#3A2523;
+    --fut:#8D91A8;--futbg:#20202F;
+    --hdr1:#1B1533;--hdr2:#2A1D5E;--hdr3:#4B34A0;--hdrink:#EFEAFD;--hdrink2:#B4A6E8;
+    --shadow:0 24px 60px -32px rgba(0,0,0,.6),0 2px 8px rgba(0,0,0,.2);
+    --phone:#15151F;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:"PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;line-height:1.6;padding:28px 16px 56px}
+  .mono{font-family:ui-monospace,"SF Mono",Consolas,Menlo,monospace}
+  .num{font-variant-numeric:tabular-nums}
+  .page{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:26px}
+  h1,h2,h3{text-wrap:balance;margin:0}
+
+  /* ---- hero ---- */
+  .hero{position:relative;border-radius:22px;overflow:hidden;color:var(--hdrink);
+    background:linear-gradient(135deg,var(--hdr1) 0%,var(--hdr2) 55%,var(--hdr3) 100%);
+    padding:30px 34px 28px;box-shadow:var(--shadow)}
+  .hero::before{content:"";position:absolute;right:-110px;top:-150px;width:400px;height:400px;border-radius:50%;background:rgba(255,255,255,.06)}
+  .hero::after{content:"";position:absolute;right:90px;bottom:-180px;width:260px;height:260px;border-radius:50%;background:rgba(255,255,255,.04)}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;padding:5px 12px;border:1px solid rgba(255,255,255,.3);
+    border-radius:999px;font-size:11px;letter-spacing:.14em;color:var(--hdrink2)}
+  .eyebrow i{width:6px;height:6px;border-radius:50%;background:var(--hdrink2)}
+  .hero h1{margin:12px 0 8px;font-size:30px;font-weight:800;letter-spacing:-.02em;color:#fff;position:relative;z-index:1}
+  .hero .thesis{position:relative;z-index:1;font-size:15.5px;font-weight:700;color:#fff;margin:0 0 6px}
+  .hero .thesis b{color:#D9CDFB}
+  .hero .sub{position:relative;z-index:1;margin:0;color:var(--hdrink2);font-size:12.5px;max-width:760px}
+
+  /* ---- section shell ---- */
+  .sec{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;box-shadow:var(--shadow)}
+  .label{display:inline-flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.16em;color:var(--acc7);font-weight:700;margin-bottom:6px}
+  .label::before{content:"";width:16px;height:2px;background:var(--acc7);border-radius:2px}
+  .sec>h2{font-size:19px;font-weight:800;letter-spacing:-.01em;margin-bottom:4px}
+  .sec>.desc{color:var(--ink2);font-size:13px;margin:0 0 18px;max-width:72ch}
+
+  /* ---- wireframes ---- */
+  .phones{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:22px;align-items:start}
+  .phone{background:var(--phone);border:1.5px solid var(--line);border-radius:26px;overflow:hidden;
+    max-width:390px;margin:0 auto;width:100%;display:flex;flex-direction:column}
+  .phone .cap{font-size:11.5px;letter-spacing:.1em;color:var(--ink3);text-align:center;padding:9px 0 7px;border-bottom:1px solid var(--line);background:var(--card)}
+  .appbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 10px}
+  .appbar .brand{font-weight:800;font-size:14px;letter-spacing:-.01em}
+  .appbar .brand i{display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--acc7);margin-right:6px}
+  .appbar .who{font-size:11px;color:var(--ink3)}
+  .screen{padding:0 12px 12px;display:flex;flex-direction:column;gap:10px}
+  .tile{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+  .tile h4{margin:0 0 8px;font-size:12px;color:var(--ink2);font-weight:600}
+  .balance .big{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+  .balance .big small{font-size:12px;font-weight:600;color:var(--ink2);margin-left:4px}
+  .balance .row{display:flex;align-items:flex-end;justify-content:space-between;gap:10px}
+  .btn{display:inline-block;padding:7px 14px;border-radius:999px;font-size:12px;font-weight:700;
+    background:var(--acc7);color:#fff;white-space:nowrap}
+  .btn.ghost{background:var(--acc1);color:var(--acc7)}
+  .runrow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 2px;border-top:1px solid var(--line);font-size:12.5px}
+  .runrow:first-of-type{border-top:0;padding-top:2px}
+  .runrow .l{min-width:0}
+  .runrow .id{font-weight:700}
+  .runrow .meta{color:var(--ink3);font-size:11px}
+  .chip{flex:none;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;border:1px solid}
+  .chip.ok{color:var(--ok);background:var(--okbg);border-color:var(--okline)}
+  .chip.bad{color:var(--kill);background:var(--killbg);border-color:var(--killtrack)}
+  .statgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+  .statgrid .s b{display:block;font-size:16px;font-weight:800;letter-spacing:-.01em}
+  .statgrid .s span{font-size:10.5px;color:var(--ink3)}
+  .tabbar{display:flex;border-top:1px solid var(--line);background:var(--card)}
+  .tabbar span{flex:1;text-align:center;font-size:10.5px;padding:9px 0 11px;color:var(--ink3)}
+  .tabbar span.on{color:var(--acc7);font-weight:800}
+  /* run detail */
+  .headline{font-size:13.5px;line-height:1.65}
+  .headline b.in{font-size:19px;letter-spacing:-.01em}
+  .headline .live{color:var(--ok);font-weight:800}
+  .facts{font-size:10.5px;color:var(--ink3);line-height:1.7;border-top:1px dashed var(--line);margin-top:9px;padding-top:8px}
+  .cause{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:7px 0;border-top:1px solid var(--line)}
+  .cause:first-of-type{border-top:0;padding-top:0}
+  .cause .gl{font-size:12px;font-weight:600}
+  .cause .op{font-size:10px;color:var(--ink3)}
+  .cause .n{font-size:12px;font-weight:700;text-align:right;align-self:center}
+  .cause .n small{display:block;font-weight:400;font-size:10px;color:var(--ink3)}
+  .track{grid-column:1/-1;height:12px;background:var(--killtrack);border-radius:4px;overflow:hidden;margin-top:3px}
+  .track i{display:block;height:100%;background:var(--kill);border-radius:0 4px 4px 0}
+  .deliver{display:flex;gap:8px;align-items:center;justify-content:space-between}
+  .deliver .note{font-size:11px;color:var(--ink2)}
+
+  /* ---- two planes diagram ---- */
+  .planes{display:grid;grid-template-columns:1fr auto auto auto 1fr;gap:14px;align-items:stretch}
+  .plane{border:1.5px solid var(--line);border-radius:16px;padding:16px 18px;background:var(--acc05);display:flex;flex-direction:column;gap:10px}
+  .plane h3{font-size:14.5px;font-weight:800}
+  .plane h3 small{display:block;font-size:11px;color:var(--ink2);font-weight:600;margin-top:2px}
+  .pbox{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12px}
+  .pbox b{display:block;font-size:12.5px}
+  .pbox span{color:var(--ink2);font-size:11px}
+  .pbox.hum{background:var(--humbg);border-color:var(--humline)}
+  .pbox.hum b{color:var(--hum)}
+  .spine{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:0 4px}
+  .spine .waist{writing-mode:vertical-rl;letter-spacing:.28em;font-size:11px;font-weight:800;color:var(--acc7);
+    border:1.5px dashed var(--acc5);border-radius:999px;padding:16px 7px;background:var(--acc1)}
+  .spine .core{background:var(--blockbg);color:var(--blockink);border-radius:12px;padding:10px 13px;font-size:11px;text-align:center;line-height:1.6}
+  .spine .core b{display:block;font-size:12px}
+  .arrows{display:flex;flex-direction:column;gap:6px;justify-content:center}
+  .arr{font-size:11px;font-weight:700;color:var(--ink2);background:var(--card);border:1px solid var(--line);
+    border-radius:999px;padding:4px 11px;white-space:nowrap;text-align:center}
+  .arr.do{color:var(--acc7);border-color:var(--acc5)}
+  .arr.see{color:var(--ok);border-color:var(--okline)}
+  .planes-note{margin:14px 0 0;font-size:12px;color:var(--ink2)}
+  .planes-note b{color:var(--ink)}
+
+  /* ---- IA ---- */
+  .ia{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+  .iacol{border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  .iacol header{padding:10px 14px;font-size:13px;font-weight:800;background:var(--acc1);color:var(--acc9)}
+  .iacol header small{display:block;font-weight:600;font-size:11px;color:var(--acc7)}
+  .iacol ul{list-style:none;margin:0;padding:4px 0}
+  .iacol li{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 14px;border-top:1px solid var(--line);font-size:12.5px}
+  .iacol li:first-child{border-top:0}
+  .iacol li b{font-weight:700}
+  .iacol li span{color:var(--ink3);font-size:11px;text-align:right}
+  .iacol li .h{color:var(--hum);font-weight:700}
+  .iacol.mgr header{background:var(--futbg);color:var(--fut)}
+  .iacol.mgr li{color:var(--ink2)}
+
+  /* ---- rulings ---- */
+  .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+  .rule{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--acc05)}
+  .rule b{display:block;font-size:13px;margin-bottom:4px}
+  .rule p{margin:0;font-size:12px;color:var(--ink2)}
+  .whitelist{margin-top:16px;border:1.5px solid var(--humline);background:var(--humbg);border-radius:14px;padding:13px 16px;font-size:12.5px}
+  .whitelist b{color:var(--hum)}
+  .notv1{margin-top:10px;border:1.5px dashed var(--line);border-radius:14px;padding:12px 16px;font-size:12px;color:var(--fut);background:var(--futbg)}
+  .notv1 b{color:var(--ink2)}
+
+  /* ---- stages ---- */
+  .railwrap{overflow-x:auto;padding-bottom:6px}
+  .rail{display:flex;gap:12px;min-width:820px}
+  .stage{flex:1;min-width:150px;border:1px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--card)}
+  .stage .k{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.08em;color:var(--acc7);
+    background:var(--acc1);border-radius:6px;padding:2px 8px;margin-bottom:7px}
+  .stage b{display:block;font-size:13px;margin-bottom:3px}
+  .stage p{margin:0;font-size:11px;color:var(--ink2)}
+  .stage p em{font-style:normal;color:var(--ok);font-weight:700}
+
+  /* ---- footer ---- */
+  .foot{text-align:center;color:var(--ink3);font-size:12px;line-height:1.9}
+  .foot .mono{font-size:11.5px}
+  @media (max-width:860px){
+    .planes{grid-template-columns:1fr}
+    .spine{flex-direction:row;padding:4px 0}
+    .spine .waist{writing-mode:horizontal-tb;padding:7px 16px}
+    .arrows{flex-direction:row;flex-wrap:wrap;justify-content:center}
+    .hero h1{font-size:24px}
+  }
+</style>
+
+<div class="page">
+
+  <header class="hero">
+    <span class="eyebrow"><i></i>DATAFOUNDRY · 看板平台设计稿 V1 · 2026-08-15</span>
+    <h1>toC 的「看的面」</h1>
+    <p class="thesis">操作台是用户的 <b>harness</b>,看板台是我们的<b>网页</b>。</p>
+    <p class="sub">剧本负责「做」,看板负责「看见、信任、批准、付钱、转发」。看板是事实的投影,不是第二个大脑——
+      正典 docs/28,总账 issue #30。</p>
+  </header>
+
+  <section class="sec">
+    <div class="label">关键两屏</div>
+    <h2>用户打开网站看到什么</h2>
+    <p class="desc">手机是 toC 第一屏。左:登录后的总览——余额、最近运行、累计战绩;右:一次运行的尸检页——
+      死因说人话,每一条被杀的都可复核。数字为线框示意,口径与生产一致。</p>
+    <div class="phones">
+
+      <div class="phone">
+        <div class="cap">屏 1 · 我的看板 / 总览</div>
+        <div class="appbar"><span class="brand"><i></i>DataFoundry</span><span class="who">william · 工程师</span></div>
+        <div class="screen">
+          <div class="tile balance">
+            <h4>余额(1 条样本 = 1 条额度)</h4>
+            <div class="row">
+              <div class="big num">8,420<small>条</small></div>
+              <span class="btn">充值</span>
+            </div>
+          </div>
+          <div class="tile">
+            <h4>最近运行</h4>
+            <div class="runrow"><div class="l"><div class="id mono">run_9f3a</div><div class="meta num">数学清洗 v2 · 12,000 → 10,364 · 今天 14:02</div></div><span class="chip ok">成功</span></div>
+            <div class="runrow"><div class="l"><div class="id mono">run_77c2</div><div class="meta num">客服语料去重 · 20,000 → 17,882 · 昨天</div></div><span class="chip ok">成功</span></div>
+            <div class="runrow"><div class="l"><div class="id mono">run_5b10</div><div class="meta num">代码指令集 · 已全额退款 · 08-12</div></div><span class="chip bad">失败</span></div>
+          </div>
+          <div class="tile">
+            <h4>累计战绩</h4>
+            <div class="statgrid num">
+              <div class="s"><b>51,300</b><span>进</span></div>
+              <div class="s"><b>44,161</b><span>出(交付)</span></div>
+              <div class="s"><b>7,139</b><span>淘汰 13.9%</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="tabbar"><span class="on">看板</span><span>数据集</span><span>账务</span><span>授权</span><span>分享</span></div>
+      </div>
+
+      <div class="phone">
+        <div class="cap">屏 2 · Run 详情 / 尸检页</div>
+        <div class="appbar"><span class="brand"><i></i>运行 <span class="mono">run_9f3a</span></span><span class="who">数学清洗 v2</span></div>
+        <div class="screen">
+          <div class="tile">
+            <p class="headline num">这批 <b class="in">12,000</b> 条数据,<span class="live">10,364 条活了下来</span>(留存 86.4%),
+              1,636 条被淘汰——<b>每一条被杀的都有可辩护的死因,任何一条都可复核。</b></p>
+            <div class="facts num mono">配方 sha256:a41f…9c02 · 平台 v0.2.0 · 预估 1,214 条,实扣 1,198 条(先算账,再干活)</div>
+          </div>
+          <div class="tile">
+            <h4>死因分布——它们为什么被杀</h4>
+            <div class="cause"><div><div class="gl">一模一样的重复</div><div class="op mono">exact_dedup</div></div><div class="n num">612<small>37.4%</small></div><div class="track"><i style="width:100%"></i></div></div>
+            <div class="cause"><div><div class="gl">太短或太长,喂不进训练</div><div class="op mono">length_filter</div></div><div class="n num">389<small>23.8%</small></div><div class="track"><i style="width:64%"></i></div></div>
+            <div class="cause"><div><div class="gl">解答自己把算术算错(假算式)</div><div class="op mono">arithmetic_consistency_verify</div></div><div class="n num">234<small>14.3%</small></div><div class="track"><i style="width:38%"></i></div></div>
+            <div class="cause"><div><div class="gl">复读机式重复(模板水文)</div><div class="op mono">repetition_filter</div></div><div class="n num">218<small>13.3%</small></div><div class="track"><i style="width:36%"></i></div></div>
+            <div class="cause"><div><div class="gl">符号杂讯占比过高</div><div class="op mono">symbol_ratio_filter</div></div><div class="n num">183<small>11.2%</small></div><div class="track"><i style="width:30%"></i></div></div>
+          </div>
+          <div class="tile deliver">
+            <span class="note">幸存集 10,364 条,JSONL</span>
+            <span class="btn">下载交付</span>
+            <span class="btn ghost">分享给老板</span>
+          </div>
+        </div>
+        <div class="tabbar"><span class="on">看板</span><span>数据集</span><span>账务</span><span>授权</span><span>分享</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="label">两面论</div>
+    <h2>看板在架构里的位置</h2>
+    <p class="desc">Skill 优先公理不动:「做」的面在用户的 harness 里,技能剧本直驱 REST。看板面只读事实投影,
+      外加人手环节——两面共享同一条窄腰与同一堆事实,互不依赖对方存活。</p>
+    <div class="planes">
+      <div class="plane">
+        <h3>干活面 · 用户的 harness<small>Claude Code / dsh / Codex,装技能即用</small></h3>
+        <div class="pbox"><b>技能四件套 skills/</b><span>onboard(含登录)· refine · autopsy · billing</span></div>
+        <div class="pbox"><b>剧本直驱 curl</b><span>上传 → 免费估算 → 人点头 → 跑 → 读尸检 → 下载</span></div>
+        <div class="pbox hum"><b>人手环节</b><span>设备码批准 · 扣费点头(授权永远在人)</span></div>
+      </div>
+      <div class="arrows">
+        <span class="arr do">做 → 技能直驱</span>
+        <span class="arr see">看 ← 只读投影</span>
+      </div>
+      <div class="spine">
+        <span class="waist">REST 窄腰</span>
+        <div class="core"><b>service → kernel</b>裁决 · 漏斗 · 账本<br>事实文件族(append-only)</div>
+      </div>
+      <div class="arrows">
+        <span class="arr see">投影 →</span>
+        <span class="arr do">← 白名单写(人手)</span>
+      </div>
+      <div class="plane">
+        <h3>看板面 · 我们的网页<small>toC 产品脸面(本设计)</small></h3>
+        <div class="pbox"><b>公开橱窗</b><span>Landing 铁证 4.04% · 样例尸检 · 定价 · 装技能</span></div>
+        <div class="pbox"><b>我的看板</b><span>总览 · Run 尸检 · 配方档案 · 账务流水</span></div>
+        <div class="pbox hum"><b>人手环节</b><span>注册登录 · 设备码批准 · 扫码支付 · 下载 · 分享</span></div>
+      </div>
+    </div>
+    <p class="planes-note"><b>不变量:</b>页面数据全部是事实的纯投影(余额 = SUM(账本),死因来自 rejects.jsonl);
+      写动作白名单外绝不长路径,入口与 REST 共用同一 service 函数;看板整体宕机,平台照常干活。</p>
+  </section>
+
+  <section class="sec">
+    <div class="label">信息架构</div>
+    <h2>三个区,一条转化漏斗</h2>
+    <p class="desc">公开区管「先看见价值」,我的看板管「看账与人手动作」,管理区与 toC 永久隔离。
+      右侧小字是每页的转化位或人手动作(<span style="color:var(--hum);font-weight:700">琥珀色 = 人手</span>)。</p>
+    <div class="ia">
+      <div class="iacol">
+        <header>公开区<small>不登录,3 分钟看见裁决</small></header>
+        <ul>
+          <li><b>Landing(改版)</b><span>4.04% 铁证橱窗 · 装技能开跑</span></li>
+          <li><b>样例尸检</b><span>自带公开样本,免费限流 → aha 时刻</span></li>
+          <li><b>定价</b><span>plans 投影</span></li>
+          <li><b>装技能</b><span>四件套复制即用 → 干活面导流</span></li>
+        </ul>
+      </div>
+      <div class="iacol">
+        <header>我的看板<small>登录后,看账 + 人手环节</small></header>
+        <ul>
+          <li><b>总览</b><span>余额 · 最近 runs · 累计战绩</span></li>
+          <li><b>Run 详情</b><span>死因人话 · <span class="h">下载交付</span></span></li>
+          <li><b>数据集 / 配方档案</b><span>留存 · 成本 · 评测分</span></li>
+          <li><b>账务</b><span>流水 · <span class="h">建单 → 扫码支付</span></span></li>
+          <li><b>授权中心</b><span><span class="h">设备码批准</span> · key 吊销</span></li>
+          <li><b>分享</b><span><span class="h">只读签名链</span>「转发给老板」</span></li>
+        </ul>
+      </div>
+      <div class="iacol mgr">
+        <header>管理区<small>永不与 toC 同一导航</small></header>
+        <ul>
+          <li><b>用户 / 授信 / 审计</b><span>保持 REST + CLI</span></li>
+          <li>「管理面永不进 MCP」的纪律,延伸到呈现层。</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="sec">
+    <div class="label">裁定</div>
+    <h2>四条不变量与一张白名单</h2>
+    <div class="rules">
+      <div class="rule"><b>看板是投影</b><p>不产生新事实,只呈现已裁决的事实(I1/I4 的展示面)。</p></div>
+      <div class="rule"><b>写 = 人手白名单</b><p>白名单外绝不长写路径;入口与 REST 共用同一 service 函数。</p></div>
+      <div class="rule"><b>看板不是心脏</b><p>技能 / REST / kernel 对看板零依赖,看板宕机平台照常干活。</p></div>
+      <div class="rule"><b>零构建链 SSR</b><p>FastAPI + Jinja2,签名 cookie 会话 + 全 CSRF;node/webpack 不进仓。</p></div>
+    </div>
+    <div class="whitelist"><b>写动作白名单(全部是人手环节):</b>注册登录(密码人打,永不经 agent)· 设备码批准 ·
+      建单 + 扫码支付(支付授权永远人手)· 下载交付 · 分享链生成 / 吊销 · API key 吊销 · 样例尸检(零扣费限流)。</div>
+    <div class="notv1"><b>明确不进 v1(登记触发,不是遗漏):</b>浏览器上传 / 配管线 / 跑管线——「做」的活留给技能面;
+      触发 = 无-harness 访客占比可观。邮箱找回、SPA 同理,各有触发条件(docs/28 §3-4)。</div>
+  </section>
+
+  <section class="sec">
+    <div class="label">建设</div>
+    <h2>五个阶段,每段独立可验收(#30)</h2>
+    <div class="railwrap">
+      <div class="rail">
+        <div class="stage"><span class="k">30-A</span><b>骨架与会话</b><p>Jinja2 壳 + cookie 会话 + CSRF;Basic 控制台退役。<em>验收:手机登录见总览。</em></p></div>
+        <div class="stage"><span class="k">30-B</span><b>我的看板</b><p>总览 / Run 详情 / 数据集 / 配方档案。<em>验收:死因与 REST 逐条一致。</em></p></div>
+        <div class="stage"><span class="k">30-C</span><b>账务与授权</b><p>流水 · 建单 → 去支付 · 到账自刷 · 设备码页收编。<em>验收:扫码到账余额跳变。</em></p></div>
+        <div class="stage"><span class="k">30-D</span><b>公开区</b><p>Landing 铁证橱窗 + 定价 + 装技能 + 样例尸检。<em>验收:无账户 3 分钟见裁决。</em></p></div>
+        <div class="stage"><span class="k">30-E</span><b>分享链</b><p>只读签名链,可吊销。<em>验收:吊销即 404。</em></p></div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    验收方式:<b>看板走查</b>(手机从 Landing 走到分享,与 Skill 走查成对)· 正典 <span class="mono">docs/28-看板平台架构.md</span> ·
+    总账 <span class="mono">issue #30</span> · 修订七处已落库<br>
+    DataFoundry · 原生的是认知,确定的是裁决与账本
+  </footer>
+
+</div>
