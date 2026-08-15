@@ -6,14 +6,26 @@ import { cookies } from "next/headers";
 
 const API = process.env.DF_API_BASE || "https://datafoundry.onrender.com";
 
-export async function apiServer<T = unknown>(path: string, init?: RequestInit): Promise<T | null> {
+export interface ServerFetch<T> {
+  status: number;
+  data: T | null;
+}
+
+// 带状态码的版本:401(未认证)与 404(资源不存在)对用户是两种不同的话——
+// "会话过期,请重登" 用在错的地方就是一条含糊的错误(违反 docs/28 §5「错误即导购」)。
+export async function apiServerStatus<T = unknown>(path: string, init?: RequestInit): Promise<ServerFetch<T>> {
   const session = (await cookies()).get("df_session")?.value;
-  if (!session) return null;
+  if (!session) return { status: 401, data: null };
   const res = await fetch(`${API}${path}`, {
     ...init,
     headers: { ...(init?.headers || {}), Authorization: `Bearer ${session}` },
     cache: "no-store",
   });
-  if (!res.ok) return null;
-  return res.json() as Promise<T>;
+  if (!res.ok) return { status: res.status, data: null };
+  return { status: res.status, data: (await res.json()) as T };
+}
+
+// 大多数页面只要"有就渲染,没有就当没登录"这一种粒度——薄封装省得每处都解构。
+export async function apiServer<T = unknown>(path: string, init?: RequestInit): Promise<T | null> {
+  return (await apiServerStatus<T>(path, init)).data;
 }

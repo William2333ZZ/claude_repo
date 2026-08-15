@@ -47,13 +47,13 @@ export default async function ConsoleOverview() {
           <p className="empty">还没有运行记录——去技能剧本里说一句"帮我清洗一批数据"。</p>
         )}
         {recent.map((r) => (
-          <div className="runrow" key={r.id}>
+          <Link className="runrow" href={`/console/runs/${r.id}`} key={r.id}>
             <div>
               <div className="mono">{r.id}</div>
               <div className="meta">{r.name}</div>
             </div>
             <StatChip status={r.status} />
-          </div>
+          </Link>
         ))}
       </Card>
 
