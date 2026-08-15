@@ -1,0 +1,52 @@
+# 一次性诊断:拉取 Render 服务最近部署清单与构建日志(排障用,不改任何状态)
+name: render-diag
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: List deploys + fetch build logs
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: |
+          python3 - <<'EOF'
+          import json, urllib.request, os
+
+          key = os.environ["RENDER_API_KEY"]
+          srv = "srv-d9tg246417fc73eb71jg"
+
+          def api(path):
+              req = urllib.request.Request(
+                  f"https://api.render.com/v1{path}",
+                  headers={"Authorization": f"Bearer {key}", "Accept": "application/json"})
+              return json.loads(urllib.request.urlopen(req, timeout=30).read())
+
+          deploys = api(f"/services/{srv}/deploys?limit=5")
+          for d in deploys:
+              dd = d["deploy"]
+              print("DEPLOY:", dd["id"], dd["status"], dd.get("trigger"),
+                    dd.get("createdAt"), (dd.get("commit") or {}).get("id", "")[:9],
+                    (dd.get("commit") or {}).get("message", "").split("\n")[0][:50])
+          latest = deploys[0]["deploy"]["id"]
+          # Render 日志 API:按资源拉 build 日志(参数按官方 v1 logs 端点)
+          import urllib.parse
+          for params in (
+              {"resource": srv, "type": "build", "limit": "100"},
+              {"resourceIds": srv, "limit": "100"},
+          ):
+              qs = urllib.parse.urlencode(params)
+              try:
+                  logs = api(f"/logs?{qs}")
+                  entries = logs.get("logs", logs if isinstance(logs, list) else [])
+                  print(f"--- logs via {qs}: {len(entries)} entries")
+                  for e in entries[-60:]:
+                      msg = e.get("message", e.get("text", str(e)))
+                      print(msg[:300])
+                  break
+              except Exception as exc:
+                  print(f"logs query {qs} failed: {exc}")
+          EOF
