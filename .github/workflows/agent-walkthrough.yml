@@ -1,0 +1,181 @@
+# Agent 走查(委托人「你现在直接用就好」指令,2026-08-15):
+# Claude 以 agent 身份照技能剧本(skills/ 四件套)对生产走完旅程 A,断言逐步落账。
+#
+# 两处人手环节的替身(均有正典依据,真人首单仍留给委托人):
+#   设备码批准  → agent 自有账户用密码换 Bearer 自发 API key(密码只活在 runner 内存,::add-mask::)
+#   扫码支付    → 管理员 /billing/grant 线下上账通道(server.py 注:B2B 现实路径)
+name: agent-walkthrough
+
+on:
+  workflow_dispatch:
+
+jobs:
+  journey-a:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: 旅程 A:注册→登录→授信→上传→估算→跑→尸检→交付→免密开看板
+        env:
+          DF_ADMIN_PASSWORD: ${{ secrets.DF_ADMIN_PASSWORD }}
+        run: |
+          set -e
+          BASE=https://datafoundry.onrender.com
+          U="claude_agent_${GITHUB_RUN_NUMBER}"
+          P=$(openssl rand -hex 16); echo "::add-mask::$P"
+          jget(){ python3 -c "import json,sys; d=json.load(sys.stdin); print(d$1)"; }
+
+          echo "== [onboard-1] 冷启动探测 =="
+          curl -sS -m 90 $BASE/health >/dev/null
+
+          echo "== [onboard-2] 自助注册 $U =="
+          code=$(curl -sS -o /tmp/r.json -w '%{http_code}' -X POST $BASE/auth/register \
+            -H 'Content-Type: application/json' -d "{\"username\": \"$U\", \"password\": \"$P\"}")
+          test "$code" = "200"
+
+          echo "== [onboard-3] 登录并自发 API key(设备码替身:agent 自有账户)=="
+          TOKEN=$(curl -sS -X POST $BASE/auth/login -H 'Content-Type: application/json' \
+            -d "{\"username\": \"$U\", \"password\": \"$P\"}" | jget "['token']")
+          echo "::add-mask::$TOKEN"
+          curl -sS -X POST $BASE/auth/keys -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' -d '{"label": "agent-walkthrough"}' > /tmp/key.json
+          KEY=$(cat /tmp/key.json | jget "['key']"); KID=$(cat /tmp/key.json | jget "['id']")
+          echo "::add-mask::$KEY"
+
+          echo "== [onboard-4] 凭据落盘 ~/.datafoundry/credentials.json =="
+          mkdir -p ~/.datafoundry && chmod 700 ~/.datafoundry
+          _KEY="$KEY" python3 - "$U" "$KID" <<'EOF'
+          import json, os, sys
+          creds = {"base_url": "https://datafoundry.onrender.com", "api_key": os.environ.get("_KEY", ""),
+                   "username": sys.argv[1], "role": "engineer", "key_id": int(sys.argv[2])}
+          p = os.path.expanduser("~/.datafoundry/credentials.json")
+          json.dump(creds, open(p, "w"), ensure_ascii=False)
+          os.chmod(p, 0o600)
+          EOF
+
+          echo "== [onboard-5] 就绪自检 =="
+          ME=$(curl -sS $BASE/auth/me -H "X-API-Key: $KEY" | jget "['username']")
+          test "$ME" = "$U"
+          BAL0=$(curl -sS $BASE/billing/me -H "X-API-Key: $KEY" | jget "['balance']")
+          echo "初始余额: $BAL0"; test "$BAL0" = "0"
+
+          echo "== [billing 替身] 管理员线下上账 100 额度(真扫码留给委托人首单)=="
+          AT=$(curl -sS -X POST $BASE/auth/login -H 'Content-Type: application/json' \
+            -d "{\"username\": \"william\", \"password\": \"$DF_ADMIN_PASSWORD\"}" | jget "['token']")
+          echo "::add-mask::$AT"
+          BAL1=$(curl -sS -X POST "$BASE/billing/grant?username=$U&credits=100&reason=agent-walkthrough" \
+            -H "Authorization: Bearer $AT" | jget "['balance']")
+          echo "授信后余额: $BAL1"; test "$BAL1" = "100"
+
+          echo "== [refine-1] 上传 22 条真样本(18 好 + 1 复制 + 2 假算式 + 1 过短)=="
+          python3 - <<'EOF'
+          import json
+          good = [
+              "小明有 12 个苹果,又买了 7 个,12+7=19,所以现在一共有 19 个苹果,答案是 19。",
+              "一箱牛奶 24 盒,喝掉 9 盒,24-9=15,还剩 15 盒,答案是 15 盒牛奶。",
+              "每支铅笔 3 元,买 8 支需要 3×8=24 元,付出 30 元应找回 30-24=6 元。",
+              "一个长方形长 9 厘米宽 4 厘米,面积是 9×4=36 平方厘米,周长是 26 厘米。",
+              "全班 45 人平均分成 5 组,45÷5=9,每组正好 9 人,分组完成没有剩余。",
+              "水果店上午卖出 36 斤苹果下午卖出 28 斤,36+28=64,全天共卖出 64 斤。",
+              "一本书 120 页,小红每天读 15 页,120÷15=8,她需要 8 天读完这本书。",
+              "停车场原有 52 辆车,开走 17 辆,52-17=35,现在停车场还有 35 辆车。",
+              "每盒装 6 个鸡蛋,42 个鸡蛋需要 42÷6=7 个盒子,正好装满不剩。",
+              "哥哥收集了 88 张卡片,送给弟弟 29 张,88-29=59,哥哥还剩 59 张卡片。",
+              "一根绳子长 72 米,剪成每段 8 米,72÷8=9,一共可以剪成 9 段。",
+              "文具店进货 13 打橡皮,每打 12 块,13×12=156,共进货 156 块橡皮。",
+              "菜地里有 27 行白菜,每行 14 棵,27×14=378,一共种了 378 棵白菜。",
+              "工厂上午生产 240 个零件,下午生产 185 个,240+185=425,全天生产 425 个。",
+              "运动会共 96 名选手,每 16 人一组,96÷16=6,正好分成 6 组进行比赛。",
+              "妈妈买了 3 千克苹果每千克 11 元,3×11=33,一共花了 33 元买苹果。",
+              "图书角有故事书 64 本,科普书比故事书少 18 本,64-18=46,科普书有 46 本。",
+              "一辆汽车每小时行驶 65 千米,行驶 4 小时,65×4=260,共行驶 260 千米。",
+          ]
+          bad = [
+              "小华算式写道:盘子里有 3 个梨又放进 4 个,所以 3+4=8,现在共有 8 个梨。",
+              "作业本上写着:货架上 15 瓶饮料卖出 6 瓶,15-6=8,货架上还剩 8 瓶饮料。",
+          ]
+          rows = [{"text": t} for t in good] + [{"text": good[0]}] + [{"text": t} for t in bad] + [{"text": "太短。"}]
+          with open("/tmp/samples.jsonl", "w", encoding="utf-8") as fh:
+              for r in rows:
+                  fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+          print("样本数:", len(rows))
+          EOF
+          DS=$(curl -sS -X POST "$BASE/datasets/upload?name=agent-walkthrough" \
+            -H "X-API-Key: $KEY" -H 'Content-Type: text/plain' \
+            --data-binary @/tmp/samples.jsonl | jget "['id']")
+          echo "数据集: $DS"
+
+          STEPS='[{"op": "length_filter", "params": {"min_len": 20}}, {"op": "exact_dedup", "params": {}}, {"op": "arithmetic_consistency_verify", "params": {}}]'
+
+          echo "== [refine-2] 免费估算(先算账)=="
+          curl -sS -X POST $BASE/pipelines/estimate -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
+            -d "{\"dataset_id\": \"$DS\", \"steps\": $STEPS}" | tee /tmp/est.json | jget "['est_cost_funnel']"
+
+          echo "== [refine-3] 批准注记:委托人已下达「直接用」授权,本次预算 100 额度内 =="
+
+          echo "== [refine-4] 执行精炼 =="
+          RUN=$(curl -sS -X POST $BASE/runs -H "X-API-Key: $KEY" -H 'Content-Type: application/json' \
+            -d "{\"name\": \"agent-walkthrough\", \"dataset_id\": \"$DS\", \"steps\": $STEPS}" | jget "['id']")
+          echo "运行: $RUN"
+          for i in $(seq 1 60); do
+            ST=$(curl -sS $BASE/runs/$RUN -H "X-API-Key: $KEY" | jget "['status']")
+            [ "$ST" = "succeeded" ] && break
+            [ "$ST" = "failed" ] && { echo "运行失败"; curl -sS $BASE/runs/$RUN -H "X-API-Key: $KEY"; exit 1; }
+            sleep 2
+          done
+          test "$ST" = "succeeded"
+          BAL2=$(curl -sS $BASE/billing/me -H "X-API-Key: $KEY" | jget "['balance']")
+          echo "跑后余额: $BAL2(应为 100-22=78)"; test "$BAL2" = "78"
+
+          echo "== [refine-5] 读尸检(死因逐条可辩护)=="
+          curl -sS "$BASE/runs/$RUN/rejects?n=20" -H "X-API-Key: $KEY" > /tmp/rej.json
+          curl -sS $BASE/runs/$RUN -H "X-API-Key: $KEY" > /tmp/run.json
+          python3 - <<'EOF'
+          import collections, json
+          rej = json.load(open("/tmp/rej.json"))["rejects"]
+          run = json.load(open("/tmp/run.json"))
+          m = run["manifest"]
+          causes = collections.Counter((s.get("trace") or [{}])[-1].get("op") for s in rej)
+          print("n_in/n_out:", m["n_in"], m["n_out"], "| 死因:", dict(causes))
+          assert m["n_in"] == 22 and m["n_out"] == 18, m
+          assert causes["length_filter"] == 1, causes
+          assert causes["exact_dedup"] == 1, causes
+          assert causes["arithmetic_consistency_verify"] == 2, causes
+          fe = [s["text"][:40] for s in rej if (s.get("trace") or [{}])[-1].get("op") == "arithmetic_consistency_verify"]
+          print("假算式样本:", fe)
+          EOF
+
+          echo "== [refine-6] 下载交付并核对 =="
+          curl -sS -o /tmp/output.jsonl "$BASE/runs/$RUN/output" -H "X-API-Key: $KEY"
+          python3 - <<'EOF'
+          rows = [l for l in open("/tmp/output.jsonl", encoding="utf-8") if l.strip()]
+          text = "".join(rows)
+          assert len(rows) == 18, len(rows)
+          assert "3+4=8" not in text and "15-6=8" not in text and "太短" not in text
+          assert text.count("现在一共有 19 个苹果") == 1  # 复制样本只活一份
+          print("幸存集 18 条,假算式/过短/重复均未混入")
+          EOF
+
+          echo "== [onboard-开看板] 免密直登,看这次运行的尸检页 =="
+          LP=$(curl -sS -X POST $BASE/auth/web-login -H "X-API-Key: $KEY" | jget "['login_path']")
+          c1=$(curl -sS -o /dev/null -w '%{http_code}' -c /tmp/jar.txt "$BASE$LP"); test "$c1" = "303"
+          curl -sS -b /tmp/jar.txt "$BASE/console/runs/$RUN" > /tmp/page.html
+          python3 - <<'EOF'
+          page = open("/tmp/page.html", encoding="utf-8").read()
+          assert "可辩护的死因" in page and "arithmetic_consistency_verify" in page
+          assert "算术算错" in page  # GLOSS 人话在场
+          print("看板尸检页:死因分布+人话对照在场")
+          EOF
+          c2=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE$LP"); test "$c2" = "401"
+
+          echo "== 走查小结 =="
+          {
+            echo "### Agent 走查(旅程 A)· 全绿"
+            echo ""
+            echo "- 账号:\`$U\`(engineer,自助注册)"
+            echo "- 余额轨迹:0 → 授信 100 → 跑后 78(扣 22,与样本数一致)"
+            echo "- 运行:\`$RUN\`:22 进 18 出,死因 = 过短 1 / 重复 1 / 假算式 2"
+            echo "- 交付:幸存集 18 条,坏样本零混入"
+            echo "- 免密开看板:303 → 会话 → 尸检页 200(死因人话在场),令牌复用 401"
+            echo "- 人手环节替身:设备码→密码自发 key(agent 自有账户);扫码→admin 线下上账"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "全部通过"
