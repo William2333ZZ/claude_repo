@@ -21,7 +21,7 @@ from pathlib import Path
 PKG = Path(__file__).resolve().parent.parent / "datafoundry"
 
 KERNEL = {"schema", "registry", "pipeline", "runner", "recipes", "matheq", "audit", "ops", "engines"}
-SERVICE = {"server", "store", "security", "billing", "ratelimit"}
+SERVICE = {"server", "store", "security", "billing", "ratelimit", "console"}
 INTERFACE = {"cli", "mcp_server", "credentials"}
 DOMAIN_DIR = {"kernel": KERNEL, "service": SERVICE, "interface": INTERFACE}
 
@@ -109,7 +109,7 @@ CONTEXTS = {
     "账务": {"billing"},
     "身份与门禁": {"security", "ratelimit"},
     "接入": {"cli", "mcp_server", "credentials"},
-    "组装与存储": {"server", "store"},
+    "组装与存储": {"server", "store", "console"},
 }
 
 

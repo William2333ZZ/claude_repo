@@ -200,6 +200,9 @@ footer{margin-top:3rem;font-size:.8rem;color:var(--muted)}
 <footer>按数据处理量计费 · 开源内核(Apache-2.0)· © 2026 DataFoundry</footer>
 </div></body></html>"""
 
+    from datafoundry.service.console import build_router  # [#19] 只读控制台(第四投影)
+    app.include_router(build_router(store))
+
     @app.get("/", response_class=HTMLResponse)
     def landing():
         return _LANDING
