@@ -11,8 +11,8 @@
 
 ```
 Skill(剧本层:怎么做、何时做、失败怎么办——含登录)
-  └─驱动→ MCP 工具(动作层:df_* 原子动作)
-        └─经 HTTP 窄腰→ service(服务)→ kernel(裁决)→ 事实文件
+  └─直驱→ REST 窄腰(curl;MCP 为可选适配器,见 §7)
+        └→ service(服务)→ kernel(裁决)→ 事实文件
 ```
 
 - **Skill 是第一交付物**:纯文本、装进 `~/.agents/skills/` 即用、跨 harness 通用
@@ -20,8 +20,8 @@ Skill(剧本层:怎么做、何时做、失败怎么办——含登录)
 - **CLI** 降为本地离线特例(demo/refine 不触云);**网页**收缩为两样:
   设备码授权页(登录的人手一环)+ 只读证据页(#19,给"转发给老板"用);
   **不再有"网页操作台"这个建设项**——操作台就是用户自己的 harness。
-- 旧"三投影矩阵"(docs/23 §4)升级为**剧本层 + 四投影**:skill 编排,MCP 执行,
-  REST 承载,CLI 离线,控制台只读。
+- 旧"三投影矩阵"(docs/23 §4)升级为**剧本层 + 四投影**:skill 编排、REST 承载(主),
+  CLI 离线、MCP 可选、控制台只读。
 
 ## 1. 登录即剧本第一幕(公理②的展开)
 
@@ -31,37 +31,36 @@ Skill(剧本层:怎么做、何时做、失败怎么办——含登录)
 
 **登录剧本(datafoundry-onboard skill)规格**:
 1. 探测凭据(`DATAFOUNDRY_API_KEY` env → `~/.datafoundry/credentials.json`)→ 有则跳过
-2. 无账户 → 引导**自助注册**(平台缺口 A)
-3. 有账户 → `df_device_login`(平台缺口 B):agent 起设备码流,把**授权页 URL+用户码**
-   交给人,人在浏览器点批准,agent 轮询拿 token → 换长期 API key → 存盘
-4. 验证:`df_status` 打通 → 报"已就绪,余额 ¥X"
-5. 失败分支:服务不可达/批准超时/额度为零,各给一句指路话术
+2. 无账户 → 自助注册 `POST /auth/register`(**已实现,生产实测 200**)
+3. 有账户 → 剧本直呼设备码端点:`/auth/device/start` 把**授权页 URL+用户码**交给人,
+   人在浏览器点批准,轮询 `/auth/device/token` 拿 API key → 存盘(**端点原已在**)
+4. 验证:`GET /auth/me` 打通 → 报"已就绪,余额 X"
+5. 失败分支:服务不可达(冷启动 ~50s)/批准超时/额度为零,各给一句指路话术
 
 安全线延伸:**密码永远不经过 agent**(设备码流的本意);API key 只落本机凭据文件。
 
 ## 2. 技能包四件套(skills/,harness 无关资产核)
 
-| Skill | 剧本 | 依赖工具 |
-|---|---|---|
-| **datafoundry-onboard** | §1 登录剧本 | df_device_login(新)· df_status |
-| **datafoundry-refine** | 上传→估算(免费)→确认扣费→跑→读尸检→交幸存集+报告 | 既有 8 工具 + df_get_rejects(新) |
-| **datafoundry-autopsy** | 公开数据集尸检(BELLE 战役剧本化:抽样纪律/仪器自检/报告格式) | df_run_pipeline · df_get_rejects |
-| **datafoundry-billing** | 查余额;不足→建单→**把 pay_url 交给人**扫码;支付后核账 | df_create_order(新)· /billing/me 投影 |
+| Skill | 剧本 | 依赖端点(REST 直呼,§7 裁定后) | 状态 |
+|---|---|---|---|
+| **datafoundry-onboard** | §1 登录剧本 | /auth/register · /auth/device/* · /auth/me · /billing/me | ✅ 已落库 |
+| **datafoundry-refine** | 上传→估算(免费)→人点头才扣费→跑→读尸检→下载交付 | /datasets/upload · /pipelines/estimate · /runs · /runs/{id}/rejects · /runs/{id}/output | ✅ 已落库 |
+| **datafoundry-autopsy** | 公开数据集尸检(BELLE 战役方法学:抽样纪律/仪器自检/报告格式) | 本地内核为主(pip install datafoundry) | ✅ 已落库 |
+| **datafoundry-billing** | 查余额;不足→建单→**pay_url 交人**扫码;到账核验 | /billing/plans · /billing/orders · /billing/me | ✅ 已落库 |
 
 每篇 SKILL.md 必含:何时用我 / 前置检查 / 步骤 / 失败分支 / 统一语言(docs/22 §1 的词)。
 旧 #26(dsh bundle 薄包装)并入本设计:bundle/插件配置只是技能包的每-harness 安装器。
 
-## 3. 平台侧改动清单(#29,按旅程断点排序)
+## 3. 平台侧改动清单(#29;§7 裁定后 B-E 全部裁撤,终态见行内标注)
 
 | # | 改动 | 为什么 | 大小 |
 |---|---|---|---|
-| A | **自助注册**:POST /auth/register(开放,engineer 角色,限流+密码策略沿用;体验额度暂 0——estimate 本来免费,付费前已可见价值) | 陌生人第一幕 | 小 |
-| B | **df_device_login**:MCP 匿名可用工具,内嵌设备码流+凭据落盘 | 公理② | 中 |
-| C | **df_get_rejects**(#28 首位,原样) | 尸检剧本 | 小 |
-| D | **df_create_order**:建单返回 pay_url;**裁定修订**——"账务不进 MCP"精确为
-"**支付授权不进 MCP,建单与查余额可进**":建单是拟提案(不动钱),人扫码支付才是授权,
-与安全线一致(docs/23 §4 账务行、§5-5 同步修订) | 计费剧本 | 小 |
-| E | df_eval_run(#28 原样,复购剧本) | 旅程 B | 小 |
+| A | **自助注册**:POST /auth/register(开放,engineer 角色,限流+密码策略沿用;体验额度暂 0) | 陌生人第一幕 | ✅ 已实现+生产实测 |
+| B | ~~df_device_login~~ | 公理② | 裁撤(§7):剧本直呼既有设备码端点 |
+| C | ~~df_get_rejects~~ | 尸检剧本 | 裁撤(§7):REST /runs/{id}/rejects 原已在 |
+| D | ~~df_create_order~~(裁定保留:**支付授权不进智能体,建单与查余额可进**) | 计费剧本 | 裁撤(§7):REST /billing/orders 原已在 |
+| E | ~~df_eval_run~~ | 旅程 B | 裁撤(§7):REST /runs/{id}/eval 原已在 |
+| F | **产出下载**:GET /runs/{id}/output | 交付一幕此前是空的(走查发现) | ✅ 已实现 |
 
 ## 4. 验收方式升级:Skill 走查
 
