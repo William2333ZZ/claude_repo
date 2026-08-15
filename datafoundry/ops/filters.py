@@ -159,6 +159,59 @@ class QualityThresholdFilter(Op):
 
 
 @register
+class ArithmeticConsistencyVerify(Op):
+    name = "arithmetic_consistency_verify"
+    kind = "verify"
+    cost_tier = "heuristic"
+    cost_per_1k = 0.002
+    expected_retention = 0.8
+    description = "解答自洽验证:检出正文全部 a◦b=c 算式断言并复算,任一为假即杀——真实语料无参考答案时的确定性验证器"
+
+    _eq = re.compile(r"(\d+(?:\.\d+)?)\s*([+\-×*xX÷/])\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)")
+    _thousands = re.compile(r"(?<=\d),(?=\d{3}\b)")
+
+    def __init__(self, min_claims: int = 1, rel_tol: float = 1e-9, abs_tol: float = 1e-6):
+        super().__init__(min_claims=min_claims, rel_tol=rel_tol, abs_tol=abs_tol)
+        self.min_claims = min_claims
+        self.rel_tol = rel_tol
+        self.abs_tol = abs_tol
+
+    def _check(self, a: float, op: str, b: float, c: float) -> bool | None:
+        """返回 True=断言成立 / False=断言为假 / None=不可判(除零等),不可判不作死因。"""
+        if op == "+":
+            v = a + b
+        elif op == "-":
+            v = a - b
+        elif op in "×*xX":
+            v = a * b
+        else:  # ÷ 或 /
+            if b == 0:
+                return None
+            v = a / b
+        return abs(v - c) <= max(self.abs_tol, self.rel_tol * max(abs(v), abs(c)))
+
+    def process(self, sample):
+        text = self._thousands.sub("", sample["text"])
+        claims = self._eq.findall(text)
+        if len(claims) < self.min_claims:
+            add_trace(sample, self.name, "pass", "无算式断言,放行")
+            return sample
+        checked = 0
+        for sa, op, sb, sc in claims:
+            ok = self._check(float(sa), op, float(sb), float(sc))
+            if ok is None:
+                continue
+            checked += 1
+            if not ok:
+                bad = f"{sa}{op}{sb}={sc}"
+                sample["stats"]["false_equation"] = bad
+                add_trace(sample, self.name, "kill", f"假算式: {bad}")
+                return None
+        add_trace(sample, self.name, "pass", f"复算 {checked} 条断言全部成立")
+        return sample
+
+
+@register
 class MathAnswerVerify(Op):
     name = "math_answer_verify"
     kind = "verify"

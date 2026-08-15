@@ -1,0 +1,142 @@
+# [真实语料切入点] 公开数据集尸检:漏斗跑真实语料,逐条死因点名,产出统计报告。
+# 许可纪律:源语料只存在于跑器临时目录;仓库只提交统计数字与"算式级"引用
+# (如「3+4=8」),不含任何语料文本;复现命令自取源数据。
+
+name: real-corpus
+
+on:
+  workflow_dispatch:
+    inputs:
+      dataset:
+        description: "HF 数据集 repo(JSONL,含 instruction/output 字段)"
+        default: "BelleGroup/school_math_0.25M"
+        required: true
+      sample_n:
+        description: "抽样条数"
+        default: "20000"
+        required: true
+      seed:
+        description: "抽样种子"
+        default: "42"
+        required: true
+
+jobs:
+  autopsy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install --quiet -e .
+      - name: Download + sample corpus(留在 /tmp,不进仓库)
+        run: |
+          python - <<'EOF'
+          import json, random, sys, urllib.request
+          repo = "${{ inputs.dataset }}"
+          api = f"https://huggingface.co/api/datasets/{repo}"
+          info = json.loads(urllib.request.urlopen(api, timeout=60).read())
+          files = [s["rfilename"] for s in info.get("siblings", [])
+                   if s["rfilename"].endswith((".json", ".jsonl"))]
+          if not files:
+              sys.exit(f"数据集无 json 文件: {[s['rfilename'] for s in info.get('siblings', [])][:20]}")
+          fname = sorted(files, key=len)[0]
+          url = f"https://huggingface.co/datasets/{repo}/resolve/main/{fname}"
+          print("downloading:", url)
+          urllib.request.urlretrieve(url, "/tmp/corpus_raw")
+          rows = []
+          with open("/tmp/corpus_raw", encoding="utf-8") as fh:
+              head = fh.read(1); fh.seek(0)
+              if head == "[":
+                  rows = json.load(fh)
+              else:
+                  for line in fh:
+                      line = line.strip()
+                      if line:
+                          try: rows.append(json.loads(line))
+                          except json.JSONDecodeError: pass
+          print("total rows:", len(rows))
+          rng = random.Random(int("${{ inputs.seed }}"))
+          n = min(int("${{ inputs.sample_n }}"), len(rows))
+          picked = rng.sample(range(len(rows)), n)
+          with open("/tmp/corpus.jsonl", "w", encoding="utf-8") as out:
+              for i in picked:
+                  r = rows[i]
+                  text = (str(r.get("instruction", "")) + "\n" + str(r.get("output", ""))).strip()
+                  if text:
+                      out.write(json.dumps({"text": text, "meta": {"src_idx": i}}, ensure_ascii=False) + "\n")
+          print("sampled:", n)
+          EOF
+      - name: Run funnel autopsy(输出目录在 /tmp)
+        run: |
+          python - <<'EOF'
+          import collections, json, hashlib, pathlib
+          import datafoundry.ops  # noqa
+          from datafoundry.runner import run_pipeline
+          STEPS = [
+              {"op": "length_filter", "params": {"min_len": 10}},
+              {"op": "symbol_ratio_filter"},
+              {"op": "repetition_filter"},
+              {"op": "exact_dedup"},
+              {"op": "minhash_dedup"},
+              {"op": "arithmetic_consistency_verify"},
+          ]
+          m = run_pipeline("/tmp/corpus.jsonl", STEPS, "/tmp/run")
+          causes = collections.Counter()
+          false_eqs = collections.Counter()
+          with open("/tmp/run/rejects.jsonl", encoding="utf-8") as fh:
+              for line in fh:
+                  s = json.loads(line)
+                  causes[s["trace"][-1]["op"]] += 1
+                  eq = s.get("stats", {}).get("false_equation")
+                  if eq:
+                      false_eqs[eq] += 1
+          sha = hashlib.sha256(pathlib.Path("/tmp/corpus.jsonl").read_bytes()).hexdigest()
+          report = {
+              "dataset": "${{ inputs.dataset }}",
+              "sample_n": m["n_in"], "seed": int("${{ inputs.seed }}"),
+              "corpus_sha256": sha,
+              "survived": m["n_out"], "retention": m["retention"],
+              "per_op": [{k: o[k] for k in ("op", "in", "out", "killed", "retention")} for o in m["per_op"]],
+              "death_causes": dict(causes),
+              "false_equation_examples": [e for e, _ in false_eqs.most_common(30)],
+              "false_equation_kills": sum(1 for _ in open("/tmp/run/rejects.jsonl", encoding="utf-8")
+                                          if '"false_equation"' in _),
+          }
+          out = pathlib.Path("experiments/m2_real/${{ inputs.dataset }}".replace("/", "__"))
+          out.mkdir(parents=True, exist_ok=True)
+          (out / "autopsy.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+          pct = lambda k: f"{causes.get(k, 0)} ({causes.get(k, 0) / m['n_in'] * 100:.1f}%)"
+          arith = report["false_equation_kills"]
+          rules = sum(causes.get(k, 0) for k in ("length_filter", "symbol_ratio_filter", "repetition_filter"))
+          lines = [
+              f"# 真实语料尸检报告:{report['dataset']}", "",
+              f"抽样 {m['n_in']:,} 条(seed={report['seed']},抽样集 sha256 前 12 位 `{sha[:12]}`),",
+              "漏斗:规则过滤 → 精确/近似去重 → **解答自洽验证**(复算正文全部算式断言,零 LLM 零成本)。", "",
+              "| 指标 | 数值 |", "|---|---|",
+              f"| 幸存 | {m['n_out']:,}({m['retention'] * 100:.1f}%) |",
+              f"| **假算式死刑**(样本自己写的算式算错) | **{arith:,} 条({arith / m['n_in'] * 100:.2f}%)** |",
+              f"| 精确重复 | {pct('exact_dedup')} |",
+              f"| 近似重复 | {pct('minhash_dedup')} |",
+              f"| 规则类(长度/符号比/重复度) | {rules} |", "",
+              "假算式样例(算式级引用,每条都可在源数据复核):",
+          ] + ["- `" + e + "`" for e in report["false_equation_examples"][:15]] + [
+              "",
+              "**许可纪律**:本目录不含语料文本,只有统计与算式级引用;源数据请自行从",
+              "HuggingFace 获取(research 用途)。复现:Actions → real-corpus,同 dataset/seed。",
+          ]
+          md = "\n".join(lines) + "\n"
+          (out / "AUTOPSY.md").write_text(md, encoding="utf-8")
+          print(md)
+          EOF
+      - name: Commit stats(rebase 重试)
+        run: |
+          git config user.name "Claude" && git config user.email "noreply@anthropic.com"
+          git add experiments/m2_real/
+          git commit -m "真实语料尸检:${{ inputs.dataset }} n=${{ inputs.sample_n }} seed=${{ inputs.seed }}(统计与算式级引用,无语料文本)" || exit 0
+          for i in 1 2 3 4; do
+            git push && exit 0
+            git pull --rebase && sleep $((i * 2))
+          done
+          exit 1
