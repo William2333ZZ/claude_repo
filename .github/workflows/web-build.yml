@@ -1,0 +1,25 @@
+# 看板外壳构建验证:web/ 变更即验 next build(口径只认落库的——骨架"可构建"由 CI 作证)
+name: web-build
+
+on:
+  workflow_dispatch:
+  push:
+    paths: ["web/**"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run: { working-directory: web }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install + build
+        run: |
+          npm install --no-fund --no-audit
+          npm run build
+      - name: Summary
+        run: echo "### web/ 外壳 next build 通过" >> "$GITHUB_STEP_SUMMARY"
