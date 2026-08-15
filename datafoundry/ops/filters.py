@@ -37,6 +37,7 @@ class SymbolRatioFilter(Op):
     cost_per_1k = 0.0002
     expected_retention = 0.95
     description = "非文字字符(符号/标点/数字之外的杂讯)占比过高则杀"
+    provides_stats = ("symbol_ratio",)
 
     _word = re.compile(r"[\w\u4e00-\u9fff]")
 
@@ -67,6 +68,7 @@ class RepetitionFilter(Op):
     cost_per_1k = 0.0005
     expected_retention = 0.92
     description = "词级 n-gram 重复率过高(模板水文/爬虫噪声)则杀"
+    provides_stats = ("ngram_dup_ratio",)
 
     def __init__(self, n: int = 3, max_dup_ratio: float = 0.3):
         super().__init__(n=n, max_dup_ratio=max_dup_ratio)
@@ -118,6 +120,7 @@ class QualityScore(Op):
     cost_per_1k = 0.0005
     expected_retention = 1.0
     description = "启发式综合质量分(0-1)写入 stats.quality,供 selector/报告使用"
+    provides_stats = ("quality",)
 
     def process(self, sample):
         text = sample["text"]
@@ -141,6 +144,7 @@ class QualityThresholdFilter(Op):
     cost_per_1k = 0.0001
     expected_retention = 0.8
     description = "按 stats.quality 阈值过滤(需先跑 quality_score)"
+    requires_stats = ("quality",)  # [DDD] 显式声明:组装期缺 quality_score 即拒编译
 
     def __init__(self, min_quality: float = 0.5):
         super().__init__(min_quality=min_quality)

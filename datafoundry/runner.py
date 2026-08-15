@@ -26,7 +26,7 @@ import os
 import time
 from pathlib import Path
 
-from datafoundry.pipeline import build_ops, funnel_compile, validate_steps
+from datafoundry.pipeline import build_ops, funnel_compile, stat_flow_errors, validate_steps
 from datafoundry.registry import OPS
 from datafoundry.schema import coerce_sample
 
@@ -105,6 +105,9 @@ def run_pipeline(
         raise ValueError("流水线不合法: " + "; ".join(errors))
 
     ordered, moves = funnel_compile(steps) if funnel else (steps, [])
+    dep_errors = stat_flow_errors(ordered)  # funnel=False 的原始顺序同样受依赖校验
+    if dep_errors:
+        raise ValueError("流水线不合法: " + "; ".join(dep_errors))
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
     chunk_size = chunk_size or int(os.environ.get("DATAFOUNDRY_CHUNK_SIZE", str(DEFAULT_CHUNK)))

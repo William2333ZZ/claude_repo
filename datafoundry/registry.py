@@ -23,6 +23,10 @@ class Op(ABC):
     cost_per_1k: float = 0.001
     expected_retention: float = 1.0
     description: str = ""
+    # [DDD/coeffect] 算子间协作的显式契约:对上游 stats 的需求与自身供给。
+    # 组装期校验,缺即拒编译(fail loud)——依赖是声明出来的,不是约定俗成的。
+    requires_stats: tuple[str, ...] = ()
+    provides_stats: tuple[str, ...] = ()
 
     def __init__(self, **params):
         self.params = params
@@ -56,6 +60,8 @@ class Op(ABC):
             "cost_per_1k": cls.cost_per_1k,
             "expected_retention": cls.expected_retention,
             "description": cls.description,
+            "requires_stats": list(cls.requires_stats),
+            "provides_stats": list(cls.provides_stats),
             "params": params,
         }
 

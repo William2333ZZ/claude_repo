@@ -31,6 +31,7 @@ class LlmJudgeFilter(Op):
     cost_per_1k = 15.0
     expected_retention = 0.6
     description = "LLM 判审过滤(OpenAI 兼容后端);score<min_score 则杀,标注留作蒸馏语料"
+    provides_stats = ("judge_score", "judge_reason")
 
     def __init__(
         self,

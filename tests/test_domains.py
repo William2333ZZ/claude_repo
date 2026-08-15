@@ -91,3 +91,26 @@ def test_all_modules_classified():
                 if p.suffix == ".py" and p.stem != "__init__" and p.stem not in known
                 or p.is_dir() and p.name not in known and (p / "__init__.py").exists()]
     assert not unplaced, f"新模块未入域册(在 tests/test_domains.py 归类后再合入): {unplaced}"
+
+
+# ---- 限界上下文(DDD 维度,与上面的技术分层正交;正典见 docs/22)----
+CONTEXTS = {
+    "精炼": {"schema", "registry", "pipeline", "runner", "ops", "engines", "matheq"},
+    "配方": {"recipes"},
+    "证据与合规": {"audit"},
+    "账务": {"billing"},
+    "身份与门禁": {"security", "ratelimit"},
+    "接入": {"cli", "mcp_server", "credentials"},
+    "组装与存储": {"server", "store"},
+}
+
+
+def test_bounded_contexts_partition_all_modules():
+    # 每个模块归属且仅归属一个业务上下文——归类是设计动作,新模块入册后方可合入
+    seen: dict[str, str] = {}
+    for ctx, members in CONTEXTS.items():
+        for m in members:
+            assert m not in seen, f"{m} 同时归属「{seen[m]}」与「{ctx}」"
+            seen[m] = ctx
+    layers = KERNEL | SERVICE | INTERFACE
+    assert set(seen) == layers, f"上下文划分与模块清单不一致: {sorted(set(seen) ^ layers)}"

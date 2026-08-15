@@ -35,15 +35,55 @@ def validate_steps(steps: list[dict]) -> list[str]:
                 validate()
             except ValueError as exc:
                 errors.append(f"step[{i}] {name}: {exc}")
+    if not errors:  # 算子都合法后,再按将要执行的顺序校验 stats 依赖(fail loud)
+        errors.extend(stat_flow_errors(funnel_compile(steps)[0]))
+    return errors
+
+
+def stat_flow_errors(ordered: list[dict]) -> list[str]:
+    """[DDD/coeffect] 组装期依赖校验:算子声明的 requires_stats 必须由排在其前的算子供给。
+    三种失败各给指路的错误:顺序颠倒 / 链中缺提供者 / 注册表根本无提供者——缺即拒编译,
+    不靠运行时"无分放行"的沉默宽容(dsh「缺服务=组装错误,加载即响亮失败」同款)。"""
+    errors: list[str] = []
+    provided: set[str] = set()
+    for idx, step in enumerate(ordered):
+        cls = OPS[step["op"]]
+        for key in cls.requires_stats:
+            if key in provided:
+                continue
+            if any(key in OPS[t["op"]].provides_stats for t in ordered[idx + 1:]):
+                errors.append(
+                    f"{step['op']} 需要上游 stats[{key!r}],但提供者排在它之后——调整顺序或检查 pin")
+            else:
+                names = sorted(n for n, c in OPS.items() if key in c.provides_stats)
+                errors.append(
+                    f"{step['op']} 需要上游 stats[{key!r}]:请先加入 {'/'.join(names)}" if names
+                    else f"{step['op']} 声明依赖 stats[{key!r}],但注册表中无算子提供它")
+        provided |= set(cls.provides_stats)
     return errors
 
 
 def funnel_compile(steps: list[dict]) -> tuple[list[dict], list[str]]:
-    """稳定排序:同档保持相对顺序;pin 的步骤固定在原索引。返回(新顺序, 调整说明)。"""
+    """稳定排序:同档保持相对顺序;pin 的步骤固定在原索引。返回(新顺序, 调整说明)。
+
+    依赖约束:声明 requires_stats 的步骤,其排序档位提升到链中提供者的档位——稳定排序随即
+    保证"用户原序正确的链,编译后依然正确"(如 llm 档打分器 + heuristic 档阈值器不会被漏斗
+    拆散)。用户原序本就颠倒或 pin 造成的冲突**不静默修**,由 stat_flow_errors 响亮失败。"""
     indexed = list(enumerate(steps))
     pinned = {i: s for i, s in indexed if s.get("pin")}
     movable = [(i, s) for i, s in indexed if not s.get("pin")]
-    movable.sort(key=lambda t: (TIER_RANK[OPS[t[1]["op"]].cost_tier], t[0]))
+    rank = {i: TIER_RANK[OPS[s["op"]].cost_tier] for i, s in indexed}
+    for _ in range(len(steps)):  # 依赖档位提升至不动点(链极短,平方界足够)
+        changed = False
+        for i, s in indexed:
+            for key in OPS[s["op"]].requires_stats:
+                for i2, s2 in indexed:
+                    if key in OPS[s2["op"]].provides_stats and rank[i] < rank[i2]:
+                        rank[i] = rank[i2]
+                        changed = True
+        if not changed:
+            break
+    movable.sort(key=lambda t: (rank[t[0]], t[0]))
     slots: list[tuple[int, dict] | None] = [None] * len(steps)
     for i, s in pinned.items():
         slots[i] = (i, s)
