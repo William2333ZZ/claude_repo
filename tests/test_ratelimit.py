@@ -2,7 +2,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from datafoundry.ratelimit import LoginGuard, SlidingWindow
+from datafoundry.service.ratelimit import LoginGuard, SlidingWindow
 
 
 class Clock:
@@ -63,7 +63,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.setenv("DATAFOUNDRY_LOGIN_MAX_FAILS", "3")
     monkeypatch.setenv("DATAFOUNDRY_LOGIN_COOLDOWN", "60")
-    from datafoundry.server import create_app
+    from datafoundry.service.server import create_app
 
     app = create_app()
     with TestClient(app) as c:
@@ -93,7 +93,7 @@ def test_rate_limit_429_with_retry_after(tmp_path, monkeypatch):
     monkeypatch.delenv("DATAFOUNDRY_DB_URL", raising=False)
     monkeypatch.delenv("DATABASE_URL", raising=False)
     monkeypatch.setenv("DATAFOUNDRY_RATE_RPM", "5")
-    from datafoundry.server import create_app
+    from datafoundry.service.server import create_app
 
     with TestClient(create_app()) as c:
         codes = [c.get("/catalog").status_code for _ in range(6)]

@@ -7,8 +7,8 @@ import textwrap
 
 import pytest
 
-import datafoundry.ops  # noqa: F401  导入即注册
-from datafoundry.runner import run_pipeline
+import datafoundry.kernel.ops  # noqa: F401  导入即注册
+from datafoundry.kernel.runner import run_pipeline
 
 STEPS = [
     {"op": "length_filter", "params": {"min_len": 5}},
@@ -84,8 +84,8 @@ def test_skipped_lines_reported_in_manifest(tmp_path):
 
 _MEM_SCRIPT = textwrap.dedent("""
     import json, resource, sys, tempfile, pathlib
-    import datafoundry.ops  # noqa
-    from datafoundry.runner import run_pipeline
+    import datafoundry.kernel.ops  # noqa
+    from datafoundry.kernel.runner import run_pipeline
     n = int(sys.argv[1])
     d = pathlib.Path(tempfile.mkdtemp())
     with open(d / "c.jsonl", "w", encoding="utf-8") as fh:

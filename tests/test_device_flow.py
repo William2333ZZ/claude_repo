@@ -4,9 +4,9 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from datafoundry.credentials import clear_credentials, load_credentials, save_credentials
-from datafoundry.server import create_app
-from datafoundry.store import Store
+from datafoundry.interface.credentials import clear_credentials, load_credentials, save_credentials
+from datafoundry.service.server import create_app
+from datafoundry.service.store import Store
 
 
 @pytest.fixture()
@@ -110,7 +110,7 @@ def test_credentials_file_roundtrip(tmp_path, monkeypatch):
     # ApiClient 回退顺序:无环境变量时读凭据文件
     monkeypatch.delenv("DATAFOUNDRY_URL", raising=False)
     monkeypatch.delenv("DATAFOUNDRY_API_KEY", raising=False)
-    from datafoundry.mcp_server import ApiClient
+    from datafoundry.interface.mcp_server import ApiClient
 
     c = ApiClient()
     assert c.api_key == "dfk_test" and c.base_url == "http://127.0.0.1:8321"

@@ -48,9 +48,9 @@ jobs:
         run: |
           python - <<'EOF'
           import json, time
-          import datafoundry.ops
-          from datafoundry.registry import create_op
-          from datafoundry.schema import make_sample
+          import datafoundry.kernel.ops
+          from datafoundry.kernel.registry import create_op
+          from datafoundry.kernel.schema import make_sample
           op = create_op("llm_judge_filter", criteria="数学题目清晰、解答步骤正确、答案与推理一致", min_score=3)
           rows = [
               "问题:小明有 3 个苹果,又买了 5 个,现在共有几个?解答:3+5=8,答案是 8。",

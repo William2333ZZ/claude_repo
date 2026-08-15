@@ -74,8 +74,8 @@ jobs:
         run: |
           python - <<'EOF'
           import collections, json, hashlib, pathlib
-          import datafoundry.ops  # noqa
-          from datafoundry.runner import run_pipeline
+          import datafoundry.kernel.ops  # noqa
+          from datafoundry.kernel.runner import run_pipeline
           STEPS = [
               {"op": "length_filter", "params": {"min_len": 10}},
               {"op": "symbol_ratio_filter"},

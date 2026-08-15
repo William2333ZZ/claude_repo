@@ -4,7 +4,7 @@
 """
 import sqlite3
 
-from datafoundry.store import _SCHEMA, Store, pg_schema, resolve_db_url
+from datafoundry.service.store import _SCHEMA, Store, pg_schema, resolve_db_url
 
 
 def test_resolve_db_url_precedence(monkeypatch):

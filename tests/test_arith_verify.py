@@ -1,6 +1,6 @@
 """解答自洽验证器测试:真实语料无参考答案时的确定性验证([M2-D 族,真实语料切入点])。"""
-import datafoundry.ops  # noqa: F401  导入即注册
-from datafoundry.registry import create_op
+import datafoundry.kernel.ops  # noqa: F401  导入即注册
+from datafoundry.kernel.registry import create_op
 
 
 def _s(text):

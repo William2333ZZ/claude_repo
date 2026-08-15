@@ -9,7 +9,7 @@
   kernel    → 只许 stdlib + kernel(零第三方是可嵌入/端侧 #27 的结构保证)
   interface → 只许 stdlib + kernel + interface(serve 子命令内的服务导入必须懒加载)
   service   → 可用第三方与 kernel,不得 import interface
-顶层旧路径 shim(datafoundry/runner.py 等)只许 sys.modules 别名,不许逻辑。
+顶层不再有任何代码文件(shim 兼容期已于 2026-08-15 结束:零外部用户,内部消费者全量迁移)。
 新模块必须入域册与上下文册,否则响亮失败——归类是设计动作,不是事后整理。
 """
 from __future__ import annotations
@@ -41,7 +41,7 @@ def _top_level_imports(path: Path):
 
 
 def _df_member(name: str) -> str:
-    """datafoundry.kernel.runner → runner;datafoundry.runner(旧路径)→ runner。"""
+    """datafoundry.kernel.runner → runner;datafoundry.kernel.runner(旧路径)→ runner。"""
     parts = name.split(".")
     if len(parts) >= 3 and parts[1] in DOMAIN_DIR:
         return parts[2]
@@ -85,24 +85,14 @@ def test_package_init_stays_kernel_clean():
     assert not bad, f"包 __init__ 引入了非内核依赖: {bad}"
 
 
-def test_legacy_shims_are_pure_aliases():
-    # 旧路径 shim 只许 sys.modules 别名(≤3 条顶层语句,无 def/class)——shim 里长逻辑=域规则后门
-    for m in sorted(KERNEL | SERVICE | INTERFACE):
-        f = PKG / f"{m}.py"
-        assert f.exists(), f"缺旧路径 shim: {m}(v0.2 兼容期内不得删除)"
-        tree = ast.parse(f.read_text(encoding="utf-8"))
-        assert len(tree.body) <= 4 and not any(
-            isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef)) for n in tree.body
-        ), f"shim {m}.py 含逻辑,只许别名"
+def test_package_top_level_is_pure():
+    # 顶层只许 __init__.py + 三个域目录——代码一律住进域里(委托人 2026-08-15「目录还有代码」整改)
+    entries = {p.name for p in PKG.iterdir() if p.name != "__pycache__"}
+    assert entries == {"__init__.py", "kernel", "service", "interface"}, \
+        f"包顶层出现未归域条目: {sorted(entries - {'__init__.py', 'kernel', 'service', 'interface'})}"
 
 
 def test_all_modules_classified():
-    domains = set(DOMAIN_DIR) | KERNEL | SERVICE | INTERFACE  # 域目录 + 顶层 shim 同名文件
-    unplaced = [p.name for p in PKG.iterdir()
-                if (p.suffix == ".py" and p.stem != "__init__" and p.stem not in domains)
-                or (p.is_dir() and p.name not in domains and p.name != "__pycache__"
-                    and (p / "__init__.py").exists())]
-    assert not unplaced, f"新模块未入域册(在 tests/test_domains.py 归类后再合入): {unplaced}"
     for domain, members in DOMAIN_DIR.items():
         actual = {p.stem if p.suffix == ".py" else p.name
                   for p in (PKG / domain).iterdir()

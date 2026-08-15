@@ -15,7 +15,7 @@ TABLES = ["credit_ledger", "orders", "device_codes", "api_keys", "runs", "datase
 
 @pytest.fixture()
 def store(tmp_path):
-    from datafoundry.store import Store
+    from datafoundry.service.store import Store
 
     st = Store(home=tmp_path, db_url=PG_URL)
     # 清桌:保证每个测试从空库开始(顺序按外键依赖倒序)

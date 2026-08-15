@@ -4,8 +4,8 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from datafoundry.server import create_app
-from datafoundry.store import Store
+from datafoundry.service.server import create_app
+from datafoundry.service.store import Store
 
 JSONL = "\n".join(
     json.dumps(r, ensure_ascii=False)
@@ -127,8 +127,8 @@ def test_health_engine_status(client):
 
 
 def test_env_bootstrap_admin(tmp_path, monkeypatch):
-    from datafoundry.server import create_app
-    from datafoundry.store import Store
+    from datafoundry.service.server import create_app
+    from datafoundry.service.store import Store
 
     monkeypatch.setenv("DATAFOUNDRY_BOOTSTRAP_ADMIN", "opsadmin:opspass123")
     c = TestClient(create_app(Store(tmp_path / "boot-home")))

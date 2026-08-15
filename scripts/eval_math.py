@@ -18,7 +18,7 @@ import urllib.request
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))  # 未安装包时(如探针复判)也能找到 datafoundry
 try:
-    from datafoundry.matheq import equivalent  # 等价判定单源(M2-D2)
+    from datafoundry.kernel.matheq import equivalent  # 等价判定单源(M2-D2)
 except ImportError:  # 独立脚本兜底:回落 L0 精确匹配(历史行为)
     def equivalent(a, b):  # type: ignore[misc]
         return a is not None and b is not None and str(a).strip() == str(b).strip()

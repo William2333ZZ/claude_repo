@@ -1,8 +1,8 @@
 import json
 
-import datafoundry.ops  # noqa: F401
-from datafoundry.pipeline import estimate, funnel_compile, validate_steps
-from datafoundry.runner import run_pipeline
+import datafoundry.kernel.ops  # noqa: F401
+from datafoundry.kernel.pipeline import estimate, funnel_compile, validate_steps
+from datafoundry.kernel.runner import run_pipeline
 
 
 def test_validate_unknown_op_and_bad_params():

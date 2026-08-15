@@ -1,6 +1,6 @@
-import datafoundry.ops  # noqa: F401
-from datafoundry.registry import catalog, create_op
-from datafoundry.schema import make_sample
+import datafoundry.kernel.ops  # noqa: F401
+from datafoundry.kernel.registry import catalog, create_op
+from datafoundry.kernel.schema import make_sample
 
 
 def run_batch(op, samples):

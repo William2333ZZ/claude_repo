@@ -5,9 +5,9 @@
 """
 import pytest
 
-import datafoundry.ops  # noqa: F401  导入即注册
-from datafoundry.pipeline import funnel_compile, stat_flow_errors, validate_steps
-from datafoundry.registry import OPS, Op, register
+import datafoundry.kernel.ops  # noqa: F401  导入即注册
+from datafoundry.kernel.pipeline import funnel_compile, stat_flow_errors, validate_steps
+from datafoundry.kernel.registry import OPS, Op, register
 
 
 def test_threshold_without_score_rejected_at_assembly():
@@ -68,7 +68,7 @@ def test_user_reversed_order_fails_loud_not_silently_fixed():
 
 
 def test_run_pipeline_funnel_off_still_enforced(tmp_path):
-    from datafoundry.runner import run_pipeline
+    from datafoundry.kernel.runner import run_pipeline
     src = tmp_path / "in.jsonl"
     src.write_text('{"text": "样本文本足够长通过检查"}\n', encoding="utf-8")
     with pytest.raises(ValueError, match="stats"):

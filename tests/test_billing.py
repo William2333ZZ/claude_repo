@@ -7,9 +7,9 @@ import time
 import pytest
 from fastapi.testclient import TestClient
 
-from datafoundry.billing import MockProvider, StripeProvider
-from datafoundry.server import create_app
-from datafoundry.store import Store
+from datafoundry.service.billing import MockProvider, StripeProvider
+from datafoundry.service.server import create_app
+from datafoundry.service.store import Store
 
 JSONL = "\n".join(
     json.dumps({"text": f"这是第 {i} 条足够长的样本,用于计费额度扣减的端到端验证。"}, ensure_ascii=False)

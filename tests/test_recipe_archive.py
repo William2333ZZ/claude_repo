@@ -4,8 +4,8 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-import datafoundry.ops  # noqa: F401
-from datafoundry.recipes import RECIPES, get_recipe, list_recipes, recipe_hash
+import datafoundry.kernel.ops  # noqa: F401
+from datafoundry.kernel.recipes import RECIPES, get_recipe, list_recipes, recipe_hash
 
 
 def test_hash_param_order_insensitive(monkeypatch):
@@ -39,7 +39,7 @@ def api(tmp_path, monkeypatch):
     monkeypatch.setenv("DATAFOUNDRY_HOME", str(tmp_path))
     monkeypatch.delenv("DATAFOUNDRY_DB_URL", raising=False)
     monkeypatch.delenv("DATABASE_URL", raising=False)
-    from datafoundry.server import create_app
+    from datafoundry.service.server import create_app
 
     app = create_app()
     with TestClient(app) as c:
@@ -81,7 +81,7 @@ def test_history_across_datasets_with_eval(api):
 
 
 def test_mcp_has_recipe_history_tool():
-    from datafoundry.mcp_server import TOOLS
+    from datafoundry.interface.mcp_server import TOOLS
 
     names = {t["name"] for t in TOOLS}
     assert "df_recipe_history" in names and len(names) == 10

@@ -1,7 +1,7 @@
 """MCP harness 协议层测试:不起 HTTP 服务,把 ApiClient.call 打桩。"""
 import json
 
-from datafoundry.mcp_server import TOOLS, ApiClient, handle_request
+from datafoundry.interface.mcp_server import TOOLS, ApiClient, handle_request
 
 
 class FakeClient(ApiClient):

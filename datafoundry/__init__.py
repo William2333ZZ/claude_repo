@@ -4,7 +4,6 @@
              `pip install datafoundry` 即得,可嵌入/端侧/私有化直用(docs/21 §7,#27 载体①)
 - service/   服务壳:RBAC HTTP API/存储双后端/计费/限流——`pip install datafoundry[server]`(+pg/billing-*)
 - interface/ 薄客户端:CLI 与 MCP harness,经 HTTP 窄腰访问服务
-顶层旧模块名(datafoundry.runner 等)为兼容 shim,一个版本期后移除。
 """
 
 __version__ = "0.2.0"

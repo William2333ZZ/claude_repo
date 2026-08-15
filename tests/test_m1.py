@@ -8,14 +8,14 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-import datafoundry.ops  # noqa: F401
-from datafoundry.ops.judge import LlmJudgeFilter
-from datafoundry.ops.synthesis import QaGenerateMapper
-from datafoundry.registry import create_op
-from datafoundry.runner import run_pipeline
-from datafoundry.schema import make_sample
-from datafoundry.server import create_app
-from datafoundry.store import Store
+import datafoundry.kernel.ops  # noqa: F401
+from datafoundry.kernel.ops.judge import LlmJudgeFilter
+from datafoundry.kernel.ops.synthesis import QaGenerateMapper
+from datafoundry.kernel.registry import create_op
+from datafoundry.kernel.runner import run_pipeline
+from datafoundry.kernel.schema import make_sample
+from datafoundry.service.server import create_app
+from datafoundry.service.store import Store
 
 REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(REPO / "evalsets"))

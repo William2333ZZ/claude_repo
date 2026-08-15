@@ -3,8 +3,8 @@ import builtins
 
 import pytest
 
-from datafoundry import matheq
-from datafoundry.matheq import equivalent, to_fraction
+from datafoundry.kernel import matheq
+from datafoundry.kernel.matheq import equivalent, to_fraction
 
 
 # ---------- L0/L1:stdlib 精确有理(总是可用) ----------
@@ -101,8 +101,8 @@ def _sample(text, ref):
 
 
 def test_op_accepts_fraction_boxed_vs_decimal_reference():
-    import datafoundry.ops  # noqa: F401  导入即注册
-    from datafoundry.registry import create_op
+    import datafoundry.kernel.ops  # noqa: F401  导入即注册
+    from datafoundry.kernel.registry import create_op
 
     op = create_op("math_answer_verify")
     assert op.process(_sample("推导得 \\boxed{\\frac{1}{2}}", "0.5")) is not None  # 新能力

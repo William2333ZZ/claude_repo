@@ -4,12 +4,12 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-import datafoundry.ops  # noqa: F401
-from datafoundry.cli import main as cli_main
-from datafoundry.recipes import RECIPES, get_recipe, missing_requirements, recipe_steps, validate_all
-from datafoundry.runner import run_pipeline
-from datafoundry.server import create_app
-from datafoundry.store import Store
+import datafoundry.kernel.ops  # noqa: F401
+from datafoundry.interface.cli import main as cli_main
+from datafoundry.kernel.recipes import RECIPES, get_recipe, missing_requirements, recipe_steps, validate_all
+from datafoundry.kernel.runner import run_pipeline
+from datafoundry.service.server import create_app
+from datafoundry.service.store import Store
 
 MATH_ROWS = [
     # 干净样本:答案与 reference 一致,应存活
@@ -128,7 +128,7 @@ def test_api_recipes_and_run(tmp_path):
 
 
 def test_mcp_list_recipes_tool():
-    from datafoundry.mcp_server import TOOLS, dispatch_tool, ApiClient
+    from datafoundry.interface.mcp_server import TOOLS, dispatch_tool, ApiClient
 
     assert any(t["name"] == "df_list_recipes" for t in TOOLS)
 

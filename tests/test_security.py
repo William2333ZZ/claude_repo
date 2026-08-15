@@ -1,6 +1,6 @@
 import time
 
-from datafoundry.security import (
+from datafoundry.service.security import (
     create_token,
     hash_api_key,
     hash_password,

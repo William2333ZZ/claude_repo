@@ -1,11 +1,11 @@
 """合规证据包:抽样可复现、死因归因正确、双标准报告齐全、CLI 端到端。"""
 import json
 
-import datafoundry.ops  # noqa: F401
-from datafoundry.audit import STANDARDS, build_report, death_cause_stats, sample_audit, write_report
-from datafoundry.cli import main as cli_main
-from datafoundry.recipes import recipe_steps
-from datafoundry.runner import run_pipeline
+import datafoundry.kernel.ops  # noqa: F401
+from datafoundry.kernel.audit import STANDARDS, build_report, death_cause_stats, sample_audit, write_report
+from datafoundry.interface.cli import main as cli_main
+from datafoundry.kernel.recipes import recipe_steps
+from datafoundry.kernel.runner import run_pipeline
 
 ROWS = [
     {"text": "问题:小明有 3 个苹果,又买了 5 个,现在共有几个?解答:3+5=8,答案是 8。", "reference": "8"},
