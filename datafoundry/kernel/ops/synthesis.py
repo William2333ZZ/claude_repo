@@ -11,8 +11,8 @@ import json
 import os
 import urllib.request
 
-from datafoundry.registry import Op, register
-from datafoundry.schema import add_trace, make_sample
+from datafoundry.kernel.registry import Op, register
+from datafoundry.kernel.schema import add_trace, make_sample
 
 
 @register

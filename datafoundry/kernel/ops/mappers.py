@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import re
 
-from datafoundry.registry import Op, register
-from datafoundry.schema import add_trace
+from datafoundry.kernel.registry import Op, register
+from datafoundry.kernel.schema import add_trace
 
 
 @register

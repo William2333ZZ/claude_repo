@@ -1,16 +1,14 @@
 [project]
 name = "datafoundry"
-version = "0.1.0"
+version = "0.2.0"
 description = "自研数据精炼平台:算子引擎 + 漏斗编译器 + 逐样本血缘 + RBAC 认证服务 + Claude Code MCP harness"
 requires-python = ">=3.10"
-dependencies = [
-    "fastapi>=0.110",
-    "uvicorn>=0.27",
-    "PyJWT>=2.7",
-    "argon2-cffi>=23.1",
-]
+# 基座零依赖:`pip install datafoundry` 只得精炼内核(kernel 域,纯标准库)——
+# 可嵌入/端侧/私有化直用。服务壳按需装 extras(改这里必须同步 Dockerfile 与 CI!)
+dependencies = []
 
 [project.optional-dependencies]
+server = ["fastapi>=0.110", "uvicorn>=0.27", "PyJWT>=2.7", "argon2-cffi>=23.1"]
 dev = ["pytest>=8", "httpx>=0.27"]
 pg = ["psycopg[binary]>=3.1"]
 math = ["sympy>=1.12"]
@@ -18,7 +16,7 @@ billing-wechat = ["wechatpayv3>=1.3"]
 billing-alipay = ["python-alipay-sdk>=3.3"]
 
 [project.scripts]
-datafoundry = "datafoundry.cli:main"
+datafoundry = "datafoundry.interface.cli:main"
 
 [build-system]
 requires = ["setuptools>=68"]

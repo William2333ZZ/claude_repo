@@ -12,8 +12,8 @@ import re
 import struct
 from typing import Iterable, Iterator
 
-from datafoundry.registry import Op, register
-from datafoundry.schema import add_trace
+from datafoundry.kernel.registry import Op, register
+from datafoundry.kernel.schema import add_trace
 
 _norm_ws = re.compile(r"\s+")
 

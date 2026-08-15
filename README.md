@@ -10,14 +10,14 @@
 ## 平台 v0.1 快速上手
 
 ```bash
-pip install -e .
+pip install -e .            # 零依赖内核+CLI(拆包 v0.2:服务端加 '.[server]')
 datafoundry demo          # 离线演示:脏数据 -> 漏斗流水线 -> 留存/死因报告
 
 datafoundry recipes       # 命名配方:简单算子的组合,每个带实验证据出处
 datafoundry refine --recipe math_zh_funnel_v1 --in data.jsonl   # 一条命令精炼:估成本->漏斗执行->报告
 datafoundry audit --run <运行目录> --standard tc260   # 合规证据包:TC260/EU-AI-Act 口径审计报告
 
-datafoundry serve         # 起 HTTP API(默认 127.0.0.1:8321)
+datafoundry serve         # 起 HTTP API(需 pip install -e '.[server]')(默认 127.0.0.1:8321)
 # 首次: POST /auth/bootstrap 创建 admin(或 datafoundry create-user)
 
 datafoundry login         # 设备授权登录(RFC 8628,同 feishu-cli/TapTap 模式):

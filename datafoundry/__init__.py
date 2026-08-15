@@ -1,13 +1,10 @@
-"""DataFoundry:自研数据精炼平台。
+"""DataFoundry:自研数据精炼平台(v0.2 拆包:域即目录,包边界=部署边界)。
 
-框架层零依赖(不依赖 Data-Juicer / DataFlow / NeMo),只依赖底座(FastAPI/uvicorn)。
-核心组件:
-- schema:统一样本模式与逐样本血缘(op_trace)
-- registry/ops:自研算子引擎(启发式/模型/LLM 三档成本标签)
-- pipeline:漏斗编译器(按成本重排)与成本预估
-- runner:执行器,产出 manifest/rejects/血缘
-- server:带 RBAC 的 HTTP API(用户/API Key/审计)
-- mcp_server:给 Claude Code 用的 MCP harness(HTTP API 的薄客户端)
+- kernel/    精炼内核:schema/算子引擎/漏斗编译器/执行器/配方/证据包——**零第三方依赖**,
+             `pip install datafoundry` 即得,可嵌入/端侧/私有化直用(docs/21 §7,#27 载体①)
+- service/   服务壳:RBAC HTTP API/存储双后端/计费/限流——`pip install datafoundry[server]`(+pg/billing-*)
+- interface/ 薄客户端:CLI 与 MCP harness,经 HTTP 窄腰访问服务
+顶层旧模块名(datafoundry.runner 等)为兼容 shim,一个版本期后移除。
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

@@ -5,7 +5,7 @@
 """
 from __future__ import annotations
 
-from datafoundry.engines.datajuicer import DataJuicerEngine
+from datafoundry.kernel.engines.datajuicer import DataJuicerEngine
 
 ENGINES = {
     "datajuicer": DataJuicerEngine(),

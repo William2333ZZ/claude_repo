@@ -3,8 +3,8 @@ from __future__ import annotations
 
 import re
 
-from datafoundry.registry import Op, register
-from datafoundry.schema import add_trace
+from datafoundry.kernel.registry import Op, register
+from datafoundry.kernel.schema import add_trace
 
 
 @register
@@ -300,7 +300,7 @@ class MathAnswerVerify(Op):
         return str(int(v)) if v == int(v) else f"{v:g}"
 
     def process(self, sample):
-        from datafoundry.matheq import equivalent, to_fraction  # 等价判定单源(M2-D2)
+        from datafoundry.kernel.matheq import equivalent, to_fraction  # 等价判定单源(M2-D2)
 
         ref = sample["meta"].get(self.reference_key)
         if ref is None:

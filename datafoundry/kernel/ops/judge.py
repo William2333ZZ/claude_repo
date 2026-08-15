@@ -13,8 +13,8 @@ import json
 import os
 import urllib.request
 
-from datafoundry.registry import Op, register
-from datafoundry.schema import add_trace
+from datafoundry.kernel.registry import Op, register
+from datafoundry.kernel.schema import add_trace
 
 _PROMPT = """你是严格的数据质检员。给下面这条训练样本按标准打 1-5 分(5 最好):
 标准: {criteria}
