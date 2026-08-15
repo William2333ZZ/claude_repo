@@ -32,20 +32,21 @@ jobs:
                     dd.get("createdAt"), (dd.get("commit") or {}).get("id", "")[:9],
                     (dd.get("commit") or {}).get("message", "").split("\n")[0][:50])
           latest = deploys[0]["deploy"]["id"]
-          # Render 日志 API:按资源拉 build 日志(参数按官方 v1 logs 端点)
           import urllib.parse
+          owner = "tea-d9tg011t0dsc73b7e230"
           for params in (
-              {"resource": srv, "type": "build", "limit": "100"},
-              {"resourceIds": srv, "limit": "100"},
+              [("ownerId", owner), ("resourceIds[]", srv), ("type", "build"), ("limit", "100"), ("direction", "backward")],
+              [("ownerId", owner), ("resourceIds[]", srv), ("limit", "100"), ("direction", "backward")],
+              [("ownerId", owner), ("resource", srv), ("limit", "100")],
           ):
               qs = urllib.parse.urlencode(params)
               try:
                   logs = api(f"/logs?{qs}")
                   entries = logs.get("logs", logs if isinstance(logs, list) else [])
                   print(f"--- logs via {qs}: {len(entries)} entries")
-                  for e in entries[-60:]:
+                  for e in entries[-80:]:
                       msg = e.get("message", e.get("text", str(e)))
-                      print(msg[:300])
+                      print(str(e.get("timestamp", ""))[:19], msg[:280])
                   break
               except Exception as exc:
                   print(f"logs query {qs} failed: {exc}")
