@@ -107,6 +107,14 @@ CREATE TABLE IF NOT EXISTS device_codes (
     created_at REAL NOT NULL,
     expires_at REAL NOT NULL
 );
+CREATE TABLE IF NOT EXISTS web_logins (
+    id INTEGER PRIMARY KEY,
+    token_hash TEXT UNIQUE NOT NULL,
+    user_id INTEGER NOT NULL REFERENCES users(id),
+    created_at REAL NOT NULL,
+    expires_at REAL NOT NULL,
+    used INTEGER NOT NULL DEFAULT 0
+);
 """
 
 _USER_CODE_ALPHABET = "BCDFGHJKMNPQRSTVWXZ23456789"  # 无易混字符(0/O/1/I/L/E/A/U/Y)
@@ -403,6 +411,32 @@ class Store:
                 "role": user["role"],
             }
         return {"status": row["status"]}  # denied / claimed / expired
+
+    # ---------- 看板免密直登(设备码流的镜像:agent 持 key,给浏览器换会话;docs/28) ----------
+
+    def web_login_start(self, user_id: int, ttl: float = 120.0) -> dict:
+        """签发一次性网页登录令牌:明文只返回这一次,库中只存哈希;短 TTL、单次消费。"""
+        token = "dfw_" + secrets.token_urlsafe(32)
+        now = time.time()
+        self._exec(
+            "INSERT INTO web_logins(token_hash, user_id, created_at, expires_at) VALUES(?,?,?,?)",
+            (hash_api_key(token), user_id, now, now + ttl),
+        )
+        return {"token": token, "expires_in": int(ttl)}
+
+    def web_login_consume(self, token: str) -> dict | None:
+        """消费一次性令牌:原子标记已用(UPDATE 带 used=0 守卫,双开只成一)并返回用户。"""
+        rows = self._query("SELECT * FROM web_logins WHERE token_hash=?", (hash_api_key(token),))
+        if not rows:
+            return None
+        row = rows[0]
+        claimed = self._exec(
+            "UPDATE web_logins SET used=1 WHERE id=? AND used=0 AND expires_at>?",
+            (row["id"], time.time()),
+        )
+        if claimed.rowcount != 1:
+            return None
+        return self.get_user(row["user_id"])
 
     # ---------- 数据集 ----------
 

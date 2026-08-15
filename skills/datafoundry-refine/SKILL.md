@@ -45,7 +45,8 @@ curl -s -X POST $BASE/runs -H "X-API-Key: $KEY" -H 'Content-Type: application/js
 
 **6. 交付**:`curl -s -o 幸存集.jsonl "$BASE/runs/<run_id>/output" -H "X-API-Key: $KEY"`,
 连同 manifest(`GET /runs/<run_id>`,含配方 hash、平台版本、实际成本)一起交给用户——
-这份 manifest 就是可复现凭证。
+这份 manifest 就是可复现凭证。想让用户在浏览器亲眼看尸检:
+`POST $BASE/auth/web-login`(见 datafoundry-onboard「打开看板」)取免密链接交给人。
 
 ## 失败分支
 

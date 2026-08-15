@@ -1,8 +1,9 @@
 """只读控制台(#19;docs/26 定位:只读证据页,"转发给老板"用)。
 
 三页服务端渲染,零 JS 框架、零外链:/console(数据集+运行)、/console/runs/{id}
-(死因首屏)、/console/recipes/{name}(配方档案)。认证走 HTTP Basic(浏览器原生,
-零会话设施,直连 RBAC;HTTPS 下可接受)。文案纪律:docs/14 §11.1 老板版——每个数字
+(死因首屏)、/console/recipes/{name}(配方档案)。认证:df_session 会话 cookie 优先
+(harness 免密直登 /auth/web-login 发放,docs/28),HTTP Basic 兜底(30-A 退役)。
+文案纪律:docs/14 §11.1 老板版——每个数字
 配一句人话;死因说"可辩护的理由",不说"质量低"。控制台是第四投影,**永不长出写路径**。
 """
 from __future__ import annotations
@@ -16,6 +17,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import HTMLResponse
 
 from datafoundry.kernel.audit import death_cause_stats
+from datafoundry.service.security import parse_token
 
 # 死因的人话对照(老板版):算子名 → 一句谁都能懂的话
 GLOSS = {
@@ -81,6 +83,12 @@ def build_router(store) -> APIRouter:
     router = APIRouter()
 
     def console_user(request: Request) -> dict:
+        # 会话 cookie 优先(harness 免密直登发放,docs/28);HTTP Basic 保留到 30-A 退役
+        session = request.cookies.get("df_session")
+        if session:
+            payload = parse_token(store.secret, session)
+            if payload:
+                return {"id": payload["uid"], "username": payload["sub"], "role": payload["role"]}
         hdr = request.headers.get("authorization", "")
         if hdr.lower().startswith("basic "):
             try:

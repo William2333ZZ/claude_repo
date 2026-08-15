@@ -31,7 +31,16 @@ jobs:
           echo "HTTP $code2"; python3 -c "import json; d=json.load(open('/tmp/login.json')); print('token_present:', bool(d.get('token')), '| role:', d.get('role'))" || cat /tmp/login.json
           echo "== console 401 契约 =="
           curl -sS -o /dev/null -w 'console_unauth: %{http_code}\n' $BASE/console
-          test "$code" = "200" -a "$code2" = "200"
+          echo "== 免密直登全链(docs/28:key→一次性令牌→会话 cookie→看板 200)=="
+          TOKEN=$(python3 -c "import json; print(json.load(open('/tmp/login.json'))['token'])")
+          LP=$(curl -sS -X POST $BASE/auth/web-login -H "Authorization: Bearer $TOKEN" | python3 -c "import json,sys; d=json.load(sys.stdin); p=d['login_path']; assert p.startswith('/auth/web?token=dfw_'), d; print(p)")
+          code3=$(curl -sS -o /dev/null -w '%{http_code}' -c /tmp/jar.txt "$BASE$LP")
+          echo "web handoff: HTTP $code3 (期望 303)"
+          code4=$(curl -sS -o /dev/null -w '%{http_code}' -b /tmp/jar.txt $BASE/console)
+          echo "console via cookie: HTTP $code4 (期望 200)"
+          code5=$(curl -sS -o /dev/null -w '%{http_code}' "$BASE$LP")
+          echo "token reuse: HTTP $code5 (期望 401,单次消费)"
+          test "$code" = "200" -a "$code2" = "200" -a "$code3" = "303" -a "$code4" = "200" -a "$code5" = "401"
           echo "探针用户 $U 留存于生产(引导版画像见审计日志);管理员可随时删除"
 
   diag:

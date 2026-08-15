@@ -22,6 +22,8 @@ curl -s -X POST "$BASE/billing/orders?plan=<starter|pro|...>" -H "X-API-Key: $KE
 
 **4. 到账核验**:用户说付完后,轮询 `GET /billing/me` 看 balance 增加、对应订单
 status=paid。到账即报:"已入账 +N 额度,当前余额 M。"支付回调是幂等的,重复通知不会重复入账。
+用户想自己在浏览器看余额与流水:`POST $BASE/auth/web-login` 取免密看板链接交给人
+(见 datafoundry-onboard「打开看板」)。
 
 ## 失败分支
 

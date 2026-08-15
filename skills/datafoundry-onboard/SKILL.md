@@ -38,6 +38,15 @@ curl -s -X POST $BASE/auth/device/token -H 'Content-Type: application/json' -d '
 **5. 就绪报告**:`/auth/me` 确认身份,`GET $BASE/billing/me` 读余额,
 向用户报:"DataFoundry 已就绪:账号 X,余额 Y。估算免费,跑精炼按样本数计费。"
 
+## 打开看板(免密直登——人想在浏览器看账时,任何时刻可用)
+
+用存盘的 key 换**一次性登录链接**(120 秒、单次消费;裸 key 永不进 URL):
+```bash
+curl -s -X POST $BASE/auth/web-login -H "X-API-Key: $KEY"
+```
+把 `"$BASE"+login_path` **交给用户**(能开浏览器的 harness 可直接打开):
+点开即进看板,不用再输密码。过期或已用就重新执行本步取新链接。
+
 ## 失败分支
 
 - 服务不可达:报地址与错误,建议稍后再试(免费实例有冷启动,首次请求可能要等 ~50 秒)

@@ -21,7 +21,7 @@ import urllib.parse
 from pathlib import Path
 
 from fastapi import Body, Depends, FastAPI, Header, HTTPException, Query, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 import datafoundry.kernel.ops  # noqa: F401  导入即注册内置算子
@@ -330,6 +330,34 @@ input[name=user_code]{{font-family:ui-monospace,monospace;letter-spacing:.12em;t
             return _PAGE.format(code="", cls="good", msg="已拒绝该授权请求。本页可关闭。")
         hints = {"not_found": "授权码不存在,请核对。", "expired": "授权码已过期,请在终端重新发起登录。"}
         return _PAGE.format(code=user_code, cls="err", msg=hints.get(status, f"当前状态: {status}"))
+
+    # ---------- 看板免密直登(docs/28:设备码流的镜像——agent 持存盘 key,给浏览器换会话) ----------
+
+    WEB_SESSION_TTL = 7 * 86400
+
+    @app.post("/auth/web-login")
+    def web_login(user: dict = Depends(require("viewer"))):
+        grant = store.web_login_start(user["id"])
+        store.audit(user["username"], "web_login_start", f"一次性令牌 ttl={grant['expires_in']}s")
+        return {
+            "login_path": f"/auth/web?token={grant['token']}",
+            "expires_in": grant["expires_in"],
+            "note": "一次性令牌,单次消费:交给人用浏览器打开即入看板;裸 API key 永不进 URL",
+        }
+
+    @app.get("/auth/web")
+    def web_session(request: Request, token: str = Query()):
+        user = store.web_login_consume(token)
+        if not user:
+            raise HTTPException(401, "登录链接无效或已过期(一次性):回到 harness 重新执行「打开看板」")
+        session = create_token(store.secret, user["id"], user["username"], user["role"], ttl=WEB_SESSION_TTL)
+        store.audit(user["username"], "web_login", "harness 免密直登 → 看板会话")
+        resp = RedirectResponse("/console", status_code=303)
+        resp.set_cookie(
+            "df_session", session, max_age=WEB_SESSION_TTL, httponly=True,
+            samesite="lax", secure=request.url.scheme == "https", path="/",
+        )
+        return resp
 
     # ---------- 用户管理(admin) ----------
 
