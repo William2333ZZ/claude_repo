@@ -4,8 +4,8 @@
   "sample_n": 19999,
   "seed": 42,
   "corpus_sha256": "7fbe8eb51bdf2a0562d047737aa51637cf5099d7e2201a97e63476d6f87fd332",
-  "survived": 18893,
-  "retention": 0.9447,
+  "survived": 18920,
+  "retention": 0.946,
   "per_op": [
     {
       "op": "length_filter",
@@ -45,21 +45,21 @@
     {
       "op": "arithmetic_consistency_verify",
       "in": 19727,
-      "out": 18893,
-      "killed": 834,
-      "retention": 0.9577
+      "out": 18920,
+      "killed": 807,
+      "retention": 0.9591
     }
   ],
   "death_causes": {
     "symbol_ratio_filter": 194,
     "repetition_filter": 61,
-    "arithmetic_consistency_verify": 834,
+    "arithmetic_consistency_verify": 807,
     "minhash_dedup": 17
   },
   "convention_stats": {
     "div_floor_convention": 278,
     "div_round_convention": 154,
-    "fraction_idiom": 238
+    "fraction_idiom": 277
   },
   "false_equation_examples": [
     "4+4=12",
@@ -76,7 +76,6 @@
     "2+2=6",
     "2+4=9",
     "2-1=2",
-    "1/4=2.5",
     "3×4=0",
     "3×3=1",
     "3-2=0",
@@ -91,7 +90,8 @@
     "8-6=10",
     "2+1=4",
     "6+6=24",
-    "3-2=3"
+    "3-2=3",
+    "4×3=0"
   ],
-  "false_equation_kills": 834
+  "false_equation_kills": 807
 }
