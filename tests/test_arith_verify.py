@@ -72,4 +72,43 @@ def test_fraction_continuation_not_killed():
 
 
 def test_plain_false_division_still_killed():
-    assert _run("12÷5=2.5") is None  # 无余数记法的假除法仍杀
+    assert _run("12÷5=2.5") is None  # 2.4 写成 2.5:非取整非四舍五入,铁证仍杀
+
+
+# ---------- v3:惯例书写记账不判死 + 复合表达式护栏(v2 尸检样例暴露的三类误杀) ----------
+
+def test_floor_division_convention_logged_not_killed():
+    s = _s("能装满 10÷3=3(盒),还剩 1 个")
+    out = create_op("arithmetic_consistency_verify").process(s)
+    assert out is not None and out["stats"]["div_floor_convention"] == 1
+    assert "惯例书写记账 1 处" in out["trace"][-1]["detail"]
+    assert _run("每组 5÷2=2 人,余 1 人另算") is not None
+    assert _run("2÷3=0 组(不足一组)") is not None
+
+
+def test_round_division_convention_logged_not_killed():
+    s = _s("2÷3=0.67(保留两位小数)")
+    out = create_op("arithmetic_consistency_verify").process(s)
+    assert out is not None and out["stats"]["div_round_convention"] == 1
+    assert _run("1÷3=0.33") is not None
+
+
+def test_division_neither_exact_nor_convention_still_killed():
+    assert _run("10÷3=5,明显算错") is None  # 既非精确也非取整/四舍五入
+
+
+def test_fraction_idiom_logged_not_killed():
+    s = _s("全程的1/4=5千米,所以全程 20 千米")
+    out = create_op("arithmetic_consistency_verify").process(s)
+    assert out is not None and out["stats"]["fraction_idiom"] == 1
+
+
+def test_compound_expression_not_misread():
+    assert _run("20×1/4=5(千米)") is not None  # 不得截成 1/4=5
+    assert _run("5+3×2=11,先乘后加") is not None  # 不得截成 3×2=11
+    assert _run("2+2=2×2,两边都是 4") is not None  # 不得截成 2+2=2
+
+
+def test_true_addition_error_still_killed():
+    assert _run("4+5=12,所以答案是 12") is None
+    assert _run("5+5=15") is None

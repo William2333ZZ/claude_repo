@@ -165,16 +165,19 @@ class ArithmeticConsistencyVerify(Op):
     cost_tier = "heuristic"
     cost_per_1k = 0.002
     expected_retention = 0.8
-    description = "解答自洽验证:检出正文全部 a◦b=c 算式断言并复算,任一为假即杀——真实语料无参考答案时的确定性验证器"
+    description = "解答自洽验证:检出正文全部 a◦b=c 算式断言并复算,复算必错才杀;取整/四舍五入/分数惯用语按书写惯例记账放行——真实语料无参考答案时的确定性验证器"
 
-    # 边界护栏:左侧不接数字/小数点/斜杠(防 13+2 被截成 3+2),右侧不接数字/斜杠
-    # (防 1/4=5/20 被截成 1/4=5)——宁漏检不误杀
+    # 边界护栏(宁漏检不误杀):
+    #   左侧不接数字/小数点/斜杠(防 13+2 被截成 3+2),也不接运算符
+    #   (防 20×1/4=5、5+3×2=11 等复合表达式被截出假断言);
+    #   右侧不接数字/斜杠(防 1/4=5/20 被截成 1/4=5),也不接运算符
+    #   (防 2+2=2×2 被截成 2+2=2)。
     _eq = re.compile(
-        r"(?<![\d./])(\d+(?:\.\d+)?)\s*([+\-×*xX÷/])\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)(?![\d/])"
+        r"(?<![\d./+\-×*xX÷])(\d+(?:\.\d+)?)\s*([+\-×*xX÷/])\s*(\d+(?:\.\d+)?)\s*=\s*(\d+(?:\.\d+)?)(?![\d/+\-×*xX÷])"
     )
     # 带余数除法记法:a÷b=q……r / a…r / 余 r —— 按 a=q*b+r 且 r<b 验证,先于普通算式消耗
     _rem = re.compile(
-        r"(?<![\d./])(\d+)\s*[÷/]\s*(\d+)\s*=\s*(\d+)\s*(?:[…]{1,2}|\.{2,6}|,?\s*余)\s*(\d+)(?![\d/])"
+        r"(?<![\d./+\-×*xX÷])(\d+)\s*[÷/]\s*(\d+)\s*=\s*(\d+)\s*(?:[…]{1,2}|\.{2,6}|,?\s*余)\s*(\d+)(?![\d/])"
     )
     _thousands = re.compile(r"(?<=\d),(?=\d{3}\b)")
 
@@ -198,9 +201,33 @@ class ArithmeticConsistencyVerify(Op):
             v = a / b
         return abs(v - c) <= max(self.abs_tol, self.rel_tol * max(abs(v), abs(c)))
 
+    @staticmethod
+    def _convention(sa: str, op: str, sb: str, sc: str) -> str | None:
+        """复算不合时的书写惯例豁免(记账放行,不判死刑):
+        fraction_idiom        「的1/4=5(千米)」惯用语——真分数=整数几乎必是「X 的 p/q」语义
+        div_floor_convention  应用题取整惯例 10÷3=3(整数除法弃余)
+        div_round_convention  按书写精度四舍五入 2÷3=0.67
+        这些数学上不严格,但不是"算错";判死会污染假算式统计——宁漏检不误杀。"""
+        if op not in "÷/":
+            return None
+        if op == "/" and "." not in sc and float(sa) < float(sb) and float(sc) >= 1:
+            return "fraction_idiom"
+        if "." in sa or "." in sb:
+            return None
+        ia, ib = int(sa), int(sb)
+        if not ib:
+            return None
+        if "." not in sc:
+            return "div_floor_convention" if int(sc) == ia // ib else None
+        k = len(sc.split(".", 1)[1])
+        if k <= 6 and abs(round(ia / ib, k) - float(sc)) < 1e-9:
+            return "div_round_convention"
+        return None
+
     def process(self, sample):
         text = self._thousands.sub("", sample["text"])
         checked = 0
+        conventions = 0
         # 先处理带余数除法(并从文本消耗,避免被普通算式正则截断误杀)
         def _rem_check(m: re.Match) -> str:
             nonlocal checked
@@ -217,21 +244,28 @@ class ArithmeticConsistencyVerify(Op):
         if "\x00KILL\x00" in text:
             add_trace(sample, self.name, "kill", f"假算式: {sample['stats']['false_equation']}")
             return None
-        claims = self._eq.findall(text)
-        if checked == 0 and len(claims) < self.min_claims:
-            add_trace(sample, self.name, "pass", "无算式断言,放行")
-            return sample
-        for sa, op, sb, sc in claims:
+        for sa, op, sb, sc in self._eq.findall(text):
             ok = self._check(float(sa), op, float(sb), float(sc))
             if ok is None:
                 continue
-            checked += 1
-            if not ok:
-                bad = f"{sa}{op}{sb}={sc}"
-                sample["stats"]["false_equation"] = bad
-                add_trace(sample, self.name, "kill", f"假算式: {bad}")
-                return None
-        add_trace(sample, self.name, "pass", f"复算 {checked} 条断言全部成立")
+            if ok:
+                checked += 1
+                continue
+            conv = self._convention(sa, op, sb, sc)  # 复算不合:先问惯例,再判死刑
+            if conv:
+                sample["stats"][conv] = sample["stats"].get(conv, 0) + 1
+                conventions += 1
+                continue
+            bad = f"{sa}{op}{sb}={sc}"
+            sample["stats"]["false_equation"] = bad
+            add_trace(sample, self.name, "kill", f"假算式: {bad}")
+            return None
+        if checked == 0 and conventions == 0:
+            add_trace(sample, self.name, "pass", "无算式断言,放行")
+            return sample
+        parts = ([f"复算 {checked} 条断言全部成立"] if checked else []) + (
+            [f"惯例书写记账 {conventions} 处"] if conventions else [])
+        add_trace(sample, self.name, "pass", ",".join(parts))
         return sample
 
 

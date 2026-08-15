@@ -23,6 +23,8 @@ on:
 jobs:
   autopsy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # 报告要提交回仓库;默认 GITHUB_TOKEN 只读,缺这行 push 必 403
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -85,6 +87,8 @@ jobs:
           m = run_pipeline("/tmp/corpus.jsonl", STEPS, "/tmp/run")
           causes = collections.Counter()
           false_eqs = collections.Counter()
+          conv = collections.Counter()  # v3:惯例书写只记账不判死,幸存/被杀两侧都要数
+          _CONV = ("div_floor_convention", "div_round_convention", "fraction_idiom")
           with open("/tmp/run/rejects.jsonl", encoding="utf-8") as fh:
               for line in fh:
                   s = json.loads(line)
@@ -92,14 +96,23 @@ jobs:
                   eq = s.get("stats", {}).get("false_equation")
                   if eq:
                       false_eqs[eq] += 1
+                  for k in _CONV:
+                      conv[k] += s.get("stats", {}).get(k, 0)
+          with open("/tmp/run/output.jsonl", encoding="utf-8") as fh:
+              for line in fh:
+                  st = json.loads(line).get("stats", {})
+                  for k in _CONV:
+                      conv[k] += st.get(k, 0)
           sha = hashlib.sha256(pathlib.Path("/tmp/corpus.jsonl").read_bytes()).hexdigest()
           report = {
               "dataset": "${{ inputs.dataset }}",
+              "verifier": "v3(带余数除法按 a=q*b+r 复验;取整/四舍五入/分数惯用语记账不判死;复合表达式边界护栏)",
               "sample_n": m["n_in"], "seed": int("${{ inputs.seed }}"),
               "corpus_sha256": sha,
               "survived": m["n_out"], "retention": m["retention"],
               "per_op": [{k: o[k] for k in ("op", "in", "out", "killed", "retention")} for o in m["per_op"]],
               "death_causes": dict(causes),
+              "convention_stats": {k: conv.get(k, 0) for k in _CONV},
               "false_equation_examples": [e for e, _ in false_eqs.most_common(30)],
               "false_equation_kills": sum(1 for _ in open("/tmp/run/rejects.jsonl", encoding="utf-8")
                                           if '"false_equation"' in _),
@@ -113,10 +126,15 @@ jobs:
           lines = [
               f"# 真实语料尸检报告:{report['dataset']}", "",
               f"抽样 {m['n_in']:,} 条(seed={report['seed']},抽样集 sha256 前 12 位 `{sha[:12]}`),",
-              "漏斗:规则过滤 → 精确/近似去重 → **解答自洽验证**(复算正文全部算式断言,零 LLM 零成本)。", "",
+              "漏斗:规则过滤 → 精确/近似去重 → **解答自洽验证**(复算正文全部算式断言,零 LLM 零成本)。",
+              "验证器 v3:带余数除法按 a=q×b+r 复验;取整(10÷3=3)、按书写精度四舍五入(2÷3=0.67)、",
+              "分数惯用语(的1/4=5)视为书写惯例**记账不判死**;复合表达式加边界护栏——宁漏检不误杀。", "",
               "| 指标 | 数值 |", "|---|---|",
               f"| 幸存 | {m['n_out']:,}({m['retention'] * 100:.1f}%) |",
-              f"| **假算式死刑**(样本自己写的算式算错) | **{arith:,} 条({arith / m['n_in'] * 100:.2f}%)** |",
+              f"| **铁证假算式死刑**(复算必错,惯例已豁免) | **{arith:,} 条({arith / m['n_in'] * 100:.2f}%)** |",
+              f"| 取整惯例书写(记账不判死) | {conv.get('div_floor_convention', 0)} 处 |",
+              f"| 四舍五入惯例书写 | {conv.get('div_round_convention', 0)} 处 |",
+              f"| 分数惯用语 | {conv.get('fraction_idiom', 0)} 处 |",
               f"| 精确重复 | {pct('exact_dedup')} |",
               f"| 近似重复 | {pct('minhash_dedup')} |",
               f"| 规则类(长度/符号比/重复度) | {rules} |", "",
